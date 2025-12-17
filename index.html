@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earn Cash - Ad & Refer</title>
+
+    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-firestore.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212; color: #ffffff;
+            margin: 0; padding: 0; display: flex; justify-content: center;
+        }
+        .app-container {
+            width: 100%; max-width: 480px; background: #1e1e1e;
+            min-height: 100vh; padding: 20px; box-sizing: border-box;
+        }
+        h2, h3 { color: #007aff; text-align: center; margin-bottom: 20px; }
+        input, select {
+            width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 10px;
+            border: 1px solid #333; background: #2c2c2c; color: white; box-sizing: border-box;
+        }
+        button { 
+            width: 100%; padding: 14px; background-color: #007aff; color: white; 
+            border: none; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 5px;
+        }
+        button:disabled { background-color: #444; color: #888; cursor: not-allowed; }
+        .withdraw-btn { background-color: #ff9500; margin-top: 15px; }
+        .logout-btn { background-color: #ff3b30; margin-top: 30px; }
+        .data-card { 
+            background: #2c2c2c; padding: 15px; border-radius: 15px; 
+            margin-bottom: 15px; border: 1px solid #3d3d3d;
+        }
+        .data-card p { margin: 5px 0; color: #bbb; }
+        .data-card strong { color: #fff; font-size: 18px; }
+        .balance-text { color: #32d74b !important; font-size: 26px !important; }
+        .notice { background: #3a3a3c; padding: 10px; border-radius: 10px; font-size: 13px; color: #ffd60a; margin-bottom: 15px; text-align: center; }
+        .refer-bonus-text { color: #ffd60a; font-weight: bold; font-size: 14px; margin-bottom: 8px; display: block; text-align: center; }
+        .timer-text { color: #ff453a; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        
+        <div id="loginScreen" class="app-screen">
+            <h2>Login</h2>
+            <form id="loginForm">
+                <input type="email" id="logEmail" placeholder="Email" required>
+                <input type="password" id="logPassword" placeholder="Password" required>
+                <button type="submit">Log In</button>
+            </form>
+            <p style="text-align: center;">New here? <span style="color:#0a84ff; cursor:pointer;" onclick="showScreen('registerScreen')">Register Now</span></p>
+        </div>
+
+        <div id="registerScreen" class="app-screen" style="display:none;">
+            <h2>Registration</h2>
+            <div class="notice">🎁 Get 5 BDT for every successful refer!</div>
+            <form id="registerForm">
+                <input type="text" id="regName" placeholder="Full Name" required>
+                <input type="email" id="regEmail" placeholder="Email Address" required>
+                <input type="password" id="regPassword" placeholder="Password (Min 6 chars)" required>
+                <input type="text" id="regReferCode" placeholder="Refer Code (Optional)">
+                <button type="submit">Create Account</button>
+            </form>
+            <p style="text-align: center; cursor:pointer;" onclick="showScreen('loginScreen')">Back to Login</p>
+        </div>
+
+        <div id="dashboardScreen" class="app-screen" style="display:none;">
+            <h3>Dashboard</h3>
+            <div class="data-card">
+                <p>Welcome, <strong id="dashName">...</strong></p>
+                <p>Total Balance:</p>
+                <strong id="dashBalance" class="balance-text">0.00 BDT</strong>
+            </div>
+
+            <div class="data-card" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <p>Ads Today</p>
+                    <strong id="adsCount">0/15</strong>
+                </div>
+                <div>
+                    <p>Total Refers</p>
+                    <strong id="refCount">0</strong>
+                </div>
+            </div>
+
+            <button id="watchAdBtn" onclick="watchAd()">Watch Ad & Earn</button>
+            <p id="cooldownMsg" class="timer-text" style="display:none; text-align:center;"></p>
+            
+            <div class="data-card" style="margin-top:15px; text-align: center;">
+                <span class="refer-bonus-text">🎁 Earn 5 BDT for every successful refer!</span>
+                <p>Refer Code: <strong id="dashReferCode" style="color:#0a84ff;">...</strong></p>
+                <button style="background:#34c759;" onclick="copyReferralLink()">Copy Link</button>
+            </div>
+
+            <button class="withdraw-btn" onclick="showScreen('withdrawScreen')">Withdraw Money</button>
+            <button class="logout-btn" onclick="auth.signOut()">Logout</button>
+        </div>
+
+        <div id="withdrawScreen" class="app-screen" style="display:none;">
+            <h3>Withdraw Funds</h3>
+            <div class="notice">Limits: Recharge 20 BDT | Bkash 50 BDT</div>
+            <div class="data-card">
+                <p>Current Balance: <strong id="withdrawBalance">0.00</strong></p>
+            </div>
+            <form id="withdrawForm">
+                <select id="method" required>
+                    <option value="">Select Payment Method</option>
+                    <option value="Recharge">Mobile Recharge (Min 20)</option>
+                    <option value="Bkash">Bkash (Min 50)</option>
+                </select>
+                <input type="number" id="amount" placeholder="Amount" required>
+                <input type="text" id="accountNumber" placeholder="Account Number" required>
+                <button type="submit" style="background:#32d74b;">Submit Request</button>
+            </form>
+            <button style="background:#3a3a3c;" onclick="showScreen('dashboardScreen')">Go Back</button>
+        </div>
+
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAnNUHLN9R-HlSkbv6c0zw7PxrUZIqqCEA",
+            authDomain: "refer-and-earn-f924e.firebaseapp.com",
+            projectId: "refer-and-earn-f924e",
+            storageBucket: "refer-and-earn-f924e.firebasestorage.app",
+            messagingSenderId: "737790821100",
+            appId: "1:737790821100:web:11b6bcdc9fc5644bdf1bc9"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.app-screen').forEach(s => s.style.display = 'none');
+            document.getElementById(screenId).style.display = 'block';
+        }
+
+        // Registration with 5 BDT Refer Bonus
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const referBy = document.getElementById('regReferCode').value.toUpperCase().trim();
+            const myRef = Math.random().toString(36).substring(2, 8).toUpperCase();
+            
+            try {
+                const cred = await auth.createUserWithEmailAndPassword(email, password);
+                if(referBy) {
+                    const refSnap = await db.collection('users').where('referCode', '==', referBy).get();
+                    if(!refSnap.empty) {
+                        const refDoc = refSnap.docs[0];
+                        await db.collection('users').doc(refDoc.id).update({
+                            balance: firebase.firestore.FieldValue.increment(5.00),
+                            referCount: firebase.firestore.FieldValue.increment(1)
+                        });
+                    }
+                }
+                await db.collection('users').doc(cred.user.uid).set({
+                    uid: cred.user.uid, name, email, referCode: myRef, balance: 0, adsWatchedToday: 0, referCount: 0, lastAdBatchTime: null
+                });
+                alert("Account Created Successfully!");
+            } catch (err) { alert(err.message); }
+        });
+
+        async function watchAd() {
+            const user = auth.currentUser;
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            const userData = userDoc.data();
+            
+            let adsWatched = userData.adsWatchedToday || 0;
+            const lastBatchTime = userData.lastAdBatchTime ? userData.lastAdBatchTime.toDate() : null;
+            const now = new Date();
+
+            if (adsWatched >= 15) {
+                if (lastBatchTime) {
+                    const diffMs = now - lastBatchTime;
+                    const diffHours = diffMs / (1000 * 60 * 60);
+                    if (diffHours < 3) {
+                        const remainingMin = Math.ceil((3 - diffHours) * 60);
+                        alert(`Limit reached! Please wait ${remainingMin} minutes.`);
+                        return;
+                    } else {
+                        adsWatched = 0;
+                    }
+                }
+            }
+
+            window.location.href = 'https://otieu.com/4/10335575';
+            
+            const newCount = adsWatched + 1;
+            const updateData = {
+                balance: firebase.firestore.FieldValue.increment(0.10),
+                adsWatchedToday: newCount
+            };
+
+            if (newCount >= 15) {
+                updateData.lastAdBatchTime = firebase.firestore.FieldValue.serverTimestamp();
+            }
+
+            await db.collection('users').doc(user.uid).update(updateData);
+        }
+
+        auth.onAuthStateChanged(user => {
+            if(user) {
+                db.collection('users').doc(user.uid).onSnapshot(doc => {
+                    if(doc.exists) {
+                        const data = doc.data();
+                        document.getElementById('dashName').textContent = data.name;
+                        document.getElementById('dashBalance').textContent = (data.balance || 0).toFixed(2) + " BDT";
+                        document.getElementById('withdrawBalance').textContent = (data.balance || 0).toFixed(2) + " BDT";
+                        document.getElementById('dashReferCode').textContent = data.referCode;
+                        document.getElementById('adsCount').textContent = (data.adsWatchedToday || 0) + "/15";
+                        document.getElementById('refCount').textContent = data.referCount || 0;
+
+                        const btn = document.getElementById('watchAdBtn');
+                        const cooldownMsg = document.getElementById('cooldownMsg');
+                        if (data.adsWatchedToday >= 15 && data.lastAdBatchTime) {
+                            const lastTime = data.lastAdBatchTime.toDate();
+                            const diff = (new Date() - lastTime) / (1000 * 60 * 60);
+                            if (diff < 3) {
+                                btn.disabled = true;
+                                cooldownMsg.style.display = 'block';
+                                cooldownMsg.textContent = "Wait for 3 hours to unlock ads.";
+                            } else {
+                                btn.disabled = false;
+                                cooldownMsg.style.display = 'none';
+                            }
+                        } else {
+                            btn.disabled = false;
+                            cooldownMsg.style.display = 'none';
+                        }
+                        showScreen('dashboardScreen');
+                    }
+                });
+            } else { showScreen('loginScreen'); }
+        });
+
+        function copyReferralLink() {
+            const code = document.getElementById('dashReferCode').textContent;
+            const link = window.location.origin + "?ref=" + code;
+            navigator.clipboard.writeText(link).then(() => alert("Refer Link Copied!"));
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', e => {
+            e.preventDefault();
+            auth.signInWithEmailAndPassword(document.getElementById('logEmail').value, document.getElementById('logPassword').value).catch(err => alert(err.message));
+        });
+    </script>
+</body>
+</html>
