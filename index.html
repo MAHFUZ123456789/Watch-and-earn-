@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earn Cash - Ad & Refer</title>
+    <title>Earn Cash - Telegram Edition</title>
 
     <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-auth.js"></script>
@@ -39,8 +39,8 @@
         .data-card strong { color: #fff; font-size: 18px; }
         .balance-text { color: #32d74b !important; font-size: 26px !important; }
         .notice { background: #3a3a3c; padding: 10px; border-radius: 10px; font-size: 13px; color: #ffd60a; margin-bottom: 15px; text-align: center; }
-        .refer-bonus-text { color: #ffd60a; font-weight: bold; font-size: 14px; margin-bottom: 8px; display: block; text-align: center; }
         .timer-text { color: #ff453a; font-weight: bold; }
+        .refer-alert { color: #ffd60a; font-size: 14px; text-align: center; margin-bottom: 10px; font-weight: bold; display: block; }
     </style>
 </head>
 <body>
@@ -58,12 +58,12 @@
 
         <div id="registerScreen" class="app-screen" style="display:none;">
             <h2>Registration</h2>
-            <div class="notice">🎁 Get 5 BDT for every successful refer!</div>
+            <div class="notice"> Get 5 BDT for every successful refer!</div>
             <form id="registerForm">
                 <input type="text" id="regName" placeholder="Full Name" required>
                 <input type="email" id="regEmail" placeholder="Email Address" required>
                 <input type="password" id="regPassword" placeholder="Password (Min 6 chars)" required>
-                <input type="text" id="regReferCode" placeholder="Refer Code (Optional)">
+                <input type="text" id="regReferCode" placeholder="Refer Code (Auto-filled)">
                 <button type="submit">Create Account</button>
             </form>
             <p style="text-align: center; cursor:pointer;" onclick="showScreen('loginScreen')">Back to Login</p>
@@ -92,9 +92,9 @@
             <p id="cooldownMsg" class="timer-text" style="display:none; text-align:center;"></p>
             
             <div class="data-card" style="margin-top:15px; text-align: center;">
-                <span class="refer-bonus-text">🎁 Earn 5 BDT for every successful refer!</span>
+                <span class="refer-alert"> Earn 5 BDT per Refer!</span>
                 <p>Refer Code: <strong id="dashReferCode" style="color:#0a84ff;">...</strong></p>
-                <button style="background:#34c759;" onclick="copyReferralLink()">Copy Link</button>
+                <button style="background:#34c759;" onclick="copyReferralLink()">Copy Refer Link</button>
             </div>
 
             <button class="withdraw-btn" onclick="showScreen('withdrawScreen')">Withdraw Money</button>
@@ -123,6 +123,7 @@
     </div>
 
     <script>
+        // 1. Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyAnNUHLN9R-HlSkbv6c0zw7PxrUZIqqCEA",
             authDomain: "refer-and-earn-f924e.firebaseapp.com",
@@ -136,12 +137,30 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        // 2. Auto Refer Logic (Detects Code from Telegram URL)
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const referCode = urlParams.get('start') || urlParams.get('tgWebAppStartParam');
+            
+            if (referCode) {
+                console.log("Found Refer Code:", referCode);
+                localStorage.setItem('pendingRefer', referCode);
+                const referInput = document.getElementById('regReferCode');
+                if (referInput) referInput.value = referCode;
+            }
+        };
+
         function showScreen(screenId) {
             document.querySelectorAll('.app-screen').forEach(s => s.style.display = 'none');
             document.getElementById(screenId).style.display = 'block';
+            
+            if(screenId === 'registerScreen') {
+                const savedCode = localStorage.getItem('pendingRefer');
+                if(savedCode) document.getElementById('regReferCode').value = savedCode;
+            }
         }
 
-        // Registration with 5 BDT Refer Bonus
+        // 3. Registration with Refer Bonus
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('regName').value;
@@ -165,15 +184,16 @@
                 await db.collection('users').doc(cred.user.uid).set({
                     uid: cred.user.uid, name, email, referCode: myRef, balance: 0, adsWatchedToday: 0, referCount: 0, lastAdBatchTime: null
                 });
+                localStorage.removeItem('pendingRefer');
                 alert("Account Created Successfully!");
             } catch (err) { alert(err.message); }
         });
 
+        // 4. Ad Logic with 3-Hour Timer
         async function watchAd() {
             const user = auth.currentUser;
             const userDoc = await db.collection('users').doc(user.uid).get();
             const userData = userDoc.data();
-            
             let adsWatched = userData.adsWatchedToday || 0;
             const lastBatchTime = userData.lastAdBatchTime ? userData.lastAdBatchTime.toDate() : null;
             const now = new Date();
@@ -181,32 +201,63 @@
             if (adsWatched >= 15) {
                 if (lastBatchTime) {
                     const diffMs = now - lastBatchTime;
-                    const diffHours = diffMs / (1000 * 60 * 60);
-                    if (diffHours < 3) {
-                        const remainingMin = Math.ceil((3 - diffHours) * 60);
-                        alert(`Limit reached! Please wait ${remainingMin} minutes.`);
-                        return;
-                    } else {
-                        adsWatched = 0;
-                    }
+                    if ((diffMs / (1000 * 60 * 60)) < 3) {
+                        return alert("Ad limit reached. Wait 3 hours.");
+                    } else { adsWatched = 0; }
                 }
             }
 
             window.location.href = 'https://otieu.com/4/10335575';
-            
             const newCount = adsWatched + 1;
-            const updateData = {
-                balance: firebase.firestore.FieldValue.increment(0.10),
-                adsWatchedToday: newCount
-            };
-
-            if (newCount >= 15) {
-                updateData.lastAdBatchTime = firebase.firestore.FieldValue.serverTimestamp();
-            }
-
+            const updateData = { balance: firebase.firestore.FieldValue.increment(0.10), adsWatchedToday: newCount };
+            if (newCount >= 15) updateData.lastAdBatchTime = firebase.firestore.FieldValue.serverTimestamp();
             await db.collection('users').doc(user.uid).update(updateData);
         }
 
+        // 5. Withdrawal Logic
+        document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const method = document.getElementById('method').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const phone = document.getElementById('accountNumber').value;
+            const user = auth.currentUser;
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            const currentBalance = userDoc.data().balance;
+
+            if (amount > currentBalance) return alert("Insufficient Balance");
+            if (method === "Recharge" && amount < 20) return alert("Min 20 BDT");
+            if (method === "Bkash" && amount < 50) return alert("Min 50 BDT");
+
+            await db.collection('withdrawals').add({
+                uid: user.uid, email: user.email, method, amount, phone, status: 'Pending', date: new Date()
+            });
+            await db.collection('users').doc(user.uid).update({ balance: firebase.firestore.FieldValue.increment(-amount) });
+            alert("Request sent successfully!");
+            showScreen('dashboardScreen');
+        });
+
+        // 6. Referral Link (Set to your Telegram Bot)
+        function copyReferralLink() {
+            const code = document.getElementById('dashReferCode').textContent;
+            //        
+            const botUsername = "Earning00100_bot"; 
+            const link = `https://t.me/${botUsername}?start=${code}`;
+            
+            navigator.clipboard.writeText(link).then(() => {
+                alert("Telegram Refer Link Copied!");
+            }).catch(() => {
+                // Fallback for older browsers
+                const el = document.createElement('textarea');
+                el.value = link;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                alert("Telegram Refer Link Copied!");
+            });
+        }
+
+        // 7. Auth State Monitoring
         auth.onAuthStateChanged(user => {
             if(user) {
                 db.collection('users').doc(user.uid).onSnapshot(doc => {
@@ -214,39 +265,25 @@
                         const data = doc.data();
                         document.getElementById('dashName').textContent = data.name;
                         document.getElementById('dashBalance').textContent = (data.balance || 0).toFixed(2) + " BDT";
-                        document.getElementById('withdrawBalance').textContent = (data.balance || 0).toFixed(2) + " BDT";
                         document.getElementById('dashReferCode').textContent = data.referCode;
                         document.getElementById('adsCount').textContent = (data.adsWatchedToday || 0) + "/15";
                         document.getElementById('refCount').textContent = data.referCount || 0;
+                        document.getElementById('withdrawBalance').textContent = (data.balance || 0).toFixed(2) + " BDT";
 
                         const btn = document.getElementById('watchAdBtn');
-                        const cooldownMsg = document.getElementById('cooldownMsg');
+                        const cooldown = document.getElementById('cooldownMsg');
                         if (data.adsWatchedToday >= 15 && data.lastAdBatchTime) {
-                            const lastTime = data.lastAdBatchTime.toDate();
-                            const diff = (new Date() - lastTime) / (1000 * 60 * 60);
+                            const diff = (new Date() - data.lastAdBatchTime.toDate()) / (1000 * 60 * 60);
                             if (diff < 3) {
-                                btn.disabled = true;
-                                cooldownMsg.style.display = 'block';
-                                cooldownMsg.textContent = "Wait for 3 hours to unlock ads.";
-                            } else {
-                                btn.disabled = false;
-                                cooldownMsg.style.display = 'none';
-                            }
-                        } else {
-                            btn.disabled = false;
-                            cooldownMsg.style.display = 'none';
-                        }
+                                btn.disabled = true; cooldown.style.display = 'block';
+                                cooldown.textContent = "Wait for 3 hours to watch more.";
+                            } else { btn.disabled = false; cooldown.style.display = 'none'; }
+                        } else { btn.disabled = false; cooldown.style.display = 'none'; }
                         showScreen('dashboardScreen');
                     }
                 });
             } else { showScreen('loginScreen'); }
         });
-
-        function copyReferralLink() {
-            const code = document.getElementById('dashReferCode').textContent;
-            const link = window.location.origin + "?ref=" + code;
-            navigator.clipboard.writeText(link).then(() => alert("Refer Link Copied!"));
-        }
 
         document.getElementById('loginForm').addEventListener('submit', e => {
             e.preventDefault();
@@ -254,4 +291,4 @@
         });
     </script>
 </body>
-</html>
+    </html>
