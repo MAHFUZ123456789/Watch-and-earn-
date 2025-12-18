@@ -10,37 +10,19 @@
     <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-firestore.js"></script>
     
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #121212; color: #ffffff;
-            margin: 0; padding: 0; display: flex; justify-content: center;
-        }
-        .app-container {
-            width: 100%; max-width: 480px; background: #1e1e1e;
-            min-height: 100vh; padding: 20px; box-sizing: border-box;
-        }
-        h2, h3 { color: #007aff; text-align: center; margin-bottom: 20px; }
-        input, select {
-            width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 10px;
-            border: 1px solid #333; background: #2c2c2c; color: white; box-sizing: border-box;
-        }
-        button { 
-            width: 100%; padding: 14px; background-color: #007aff; color: white; 
-            border: none; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 5px;
-        }
-        button:disabled { background-color: #444; color: #888; cursor: not-allowed; }
-        .withdraw-btn { background-color: #ff9500; margin-top: 15px; }
-        .logout-btn { background-color: #ff3b30; margin-top: 30px; }
-        .data-card { 
-            background: #2c2c2c; padding: 15px; border-radius: 15px; 
-            margin-bottom: 15px; border: 1px solid #3d3d3d;
-        }
-        .data-card p { margin: 5px 0; color: #bbb; }
-        .data-card strong { color: #fff; font-size: 18px; }
-        .balance-text { color: #32d74b !important; font-size: 26px !important; }
-        .notice { background: #3a3a3c; padding: 10px; border-radius: 10px; font-size: 13px; color: #ffd60a; margin-bottom: 15px; text-align: center; }
-        .timer-text { color: #ff453a; font-weight: bold; }
-        .refer-alert { color: #ffd60a; font-size: 14px; text-align: center; margin-bottom: 10px; font-weight: bold; display: block; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: #ffffff; margin: 0; padding: 0; display: flex; justify-content: center; }
+        .app-container { width: 100%; max-width: 480px; background: #1e1e1e; min-height: 100vh; padding: 20px; box-sizing: border-box; }
+        h2, h3 { color: #007aff; text-align: center; }
+        input, select { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #333; background: #2c2c2c; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; background-color: #007aff; color: white; border: none; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 5px; }
+        button:disabled { background-color: #444; color: #888; }
+        .data-card { background: #2c2c2c; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #3d3d3d; }
+        .balance-text { color: #32d74b; font-size: 26px; font-weight: bold; }
+        .history-item { background: #3a3a3c; padding: 10px; border-radius: 8px; margin-top: 5px; font-size: 14px; display: flex; justify-content: space-between; border-left: 4px solid #007aff; }
+        .status-pending { color: #ff9500; font-weight: bold; }
+        .status-success { color: #32d74b; font-weight: bold; }
+        .notice { background: #3a3a3c; padding: 10px; border-radius: 10px; font-size: 13px; color: #ffd60a; margin-bottom: 15px; text-align: center; font-weight: bold; }
+        .refer-text { color: #ffd60a; font-size: 16px; font-weight: bold; margin-bottom: 10px; display: block; text-align: center; }
     </style>
 </head>
 <body>
@@ -58,12 +40,12 @@
 
         <div id="registerScreen" class="app-screen" style="display:none;">
             <h2>Registration</h2>
-            <div class="notice"> Get 5 BDT for every successful refer!</div>
+            <div class="notice">🎁 Join now and start earning!</div>
             <form id="registerForm">
                 <input type="text" id="regName" placeholder="Full Name" required>
                 <input type="email" id="regEmail" placeholder="Email Address" required>
                 <input type="password" id="regPassword" placeholder="Password (Min 6 chars)" required>
-                <input type="text" id="regReferCode" placeholder="Refer Code (Auto-filled)">
+                <input type="text" id="regReferCode" placeholder="Refer Code (Optional)">
                 <button type="submit">Create Account</button>
             </form>
             <p style="text-align: center; cursor:pointer;" onclick="showScreen('loginScreen')">Back to Login</p>
@@ -73,51 +55,46 @@
             <h3>Dashboard</h3>
             <div class="data-card">
                 <p>Welcome, <strong id="dashName">...</strong></p>
-                <p>Total Balance:</p>
-                <strong id="dashBalance" class="balance-text">0.00 BDT</strong>
+                <p>Balance: <span id="dashBalance" class="balance-text">0.00 BDT</span></p>
             </div>
 
-            <div class="data-card" style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <p>Ads Today</p>
-                    <strong id="adsCount">0/15</strong>
-                </div>
-                <div>
-                    <p>Total Refers</p>
-                    <strong id="refCount">0</strong>
-                </div>
+            <div class="data-card" style="display: flex; justify-content: space-between;">
+                <div><p>Ads Today</p><strong id="adsCount">0/100</strong></div>
+                <div><p>Total Refers</p><strong id="refCount">0</strong></div>
             </div>
 
             <button id="watchAdBtn" onclick="watchAd()">Watch Ad & Earn</button>
-            <p id="cooldownMsg" class="timer-text" style="display:none; text-align:center;"></p>
+            <p id="cooldownMsg" style="color:red; text-align:center; display:none; font-weight: bold;">Wait for 3 hours.</p>
             
             <div class="data-card" style="margin-top:15px; text-align: center;">
-                <span class="refer-alert"> Earn 5 BDT per Refer!</span>
-                <p>Refer Code: <strong id="dashReferCode" style="color:#0a84ff;">...</strong></p>
+                <span class="refer-text">💰 Earn 5 BDT per Refer!</span>
+                <p>Refer Code: <strong id="dashReferCode" style="color:#0a84ff; font-size: 20px;">...</strong></p>
                 <button style="background:#34c759;" onclick="copyReferralLink()">Copy Refer Link</button>
             </div>
 
-            <button class="withdraw-btn" onclick="showScreen('withdrawScreen')">Withdraw Money</button>
-            <button class="logout-btn" onclick="auth.signOut()">Logout</button>
+            <button style="background:#ff9500;" onclick="showScreen('withdrawScreen')">Withdraw Money</button>
+
+            <div class="data-card" style="margin-top:20px;">
+                <h4 style="margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px;">Withdraw History</h4>
+                <div id="historyList">Loading...</div>
+            </div>
+
+            <button style="background:#ff3b30; margin-top:20px;" onclick="auth.signOut()">Logout</button>
         </div>
 
         <div id="withdrawScreen" class="app-screen" style="display:none;">
             <h3>Withdraw Funds</h3>
-            <div class="notice">Limits: Recharge 20 BDT | Bkash 50 BDT</div>
-            <div class="data-card">
-                <p>Current Balance: <strong id="withdrawBalance">0.00</strong></p>
-            </div>
+            <div class="notice">Recharge: 20 BDT | Bkash: 50 BDT</div>
             <form id="withdrawForm">
                 <select id="method" required>
-                    <option value="">Select Payment Method</option>
-                    <option value="Recharge">Mobile Recharge (Min 20)</option>
-                    <option value="Bkash">Bkash (Min 50)</option>
+                    <option value="Recharge">Mobile Recharge</option>
+                    <option value="Bkash">Bkash</option>
                 </select>
                 <input type="number" id="amount" placeholder="Amount" required>
                 <input type="text" id="accountNumber" placeholder="Account Number" required>
-                <button type="submit" style="background:#32d74b;">Submit Request</button>
+                <button type="submit" style="background:#32d74b;">Request Withdraw</button>
             </form>
-            <button style="background:#3a3a3c;" onclick="showScreen('dashboardScreen')">Go Back</button>
+            <button style="background:#3a3a3c;" onclick="showScreen('dashboardScreen')">Back</button>
         </div>
 
     </div>
@@ -132,35 +109,57 @@
             messagingSenderId: "737790821100",
             appId: "1:737790821100:web:11b6bcdc9fc5644bdf1bc9"
         };
-
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // 2. Auto Refer Logic (Detects Code from Telegram URL)
-        window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const referCode = urlParams.get('start') || urlParams.get('tgWebAppStartParam');
+        // 2. Watch Ad
+        async function watchAd() {
+            const user = auth.currentUser;
+            const doc = await db.collection('users').doc(user.uid).get();
+            const data = doc.data();
             
-            if (referCode) {
-                console.log("Found Refer Code:", referCode);
-                localStorage.setItem('pendingRefer', referCode);
-                const referInput = document.getElementById('regReferCode');
-                if (referInput) referInput.value = referCode;
+            if (data.adsWatchedToday >= 100 && data.lastAdBatchTime) {
+                const diff = (new Date() - data.lastAdBatchTime.toDate()) / (1000 * 60 * 60);
+                if (diff < 3) return alert("Please wait 3 hours!");
             }
-        };
 
-        function showScreen(screenId) {
-            document.querySelectorAll('.app-screen').forEach(s => s.style.display = 'none');
-            document.getElementById(screenId).style.display = 'block';
-            
-            if(screenId === 'registerScreen') {
-                const savedCode = localStorage.getItem('pendingRefer');
-                if(savedCode) document.getElementById('regReferCode').value = savedCode;
-            }
+            window.open('https://otieu.com/4/10335575', '_blank');
+
+            let newCount = (data.adsWatchedToday || 0) + 1;
+            let updateData = {
+                balance: firebase.firestore.FieldValue.increment(0.10),
+                adsWatchedToday: newCount
+            };
+            if (newCount >= 100) updateData.lastAdBatchTime = firebase.firestore.FieldValue.serverTimestamp();
+
+            await db.collection('users').doc(user.uid).update(updateData);
         }
 
-        // 3. Registration with Refer Bonus
+        // 3. Withdraw History (Error Fix: Snapshot Listener)
+        function loadWithdrawHistory(uid) {
+            // orderBy সরিয়ে দেওয়া হয়েছে যাতে ইন্ডেক্স এরর না আসে
+            db.collection('withdrawals').where('uid', '==', uid).onSnapshot(snap => {
+                const list = document.getElementById('historyList');
+                if (snap.empty) { list.innerHTML = "No history found."; return; }
+                
+                let html = '';
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const statusClass = data.status === 'Pending' ? 'status-pending' : 'status-success';
+                    html += `<div class="history-item">
+                                <span>${data.method} - ${data.amount}৳</span>
+                                <span class="${statusClass}">${data.status}</span>
+                             </div>`;
+                });
+                list.innerHTML = html;
+            }, err => {
+                console.error("History Error: ", err);
+                document.getElementById('historyList').innerHTML = "Error loading history.";
+            });
+        }
+
+        // 4. Registration
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('regName').value;
@@ -174,8 +173,7 @@
                 if(referBy) {
                     const refSnap = await db.collection('users').where('referCode', '==', referBy).get();
                     if(!refSnap.empty) {
-                        const refDoc = refSnap.docs[0];
-                        await db.collection('users').doc(refDoc.id).update({
+                        await db.collection('users').doc(refSnap.docs[0].id).update({
                             balance: firebase.firestore.FieldValue.increment(5.00),
                             referCount: firebase.firestore.FieldValue.increment(1)
                         });
@@ -184,37 +182,10 @@
                 await db.collection('users').doc(cred.user.uid).set({
                     uid: cred.user.uid, name, email, referCode: myRef, balance: 0, adsWatchedToday: 0, referCount: 0, lastAdBatchTime: null
                 });
-                localStorage.removeItem('pendingRefer');
-                alert("Account Created Successfully!");
             } catch (err) { alert(err.message); }
         });
 
-        // 4. Ad Logic with 3-Hour Timer
-        async function watchAd() {
-            const user = auth.currentUser;
-            const userDoc = await db.collection('users').doc(user.uid).get();
-            const userData = userDoc.data();
-            let adsWatched = userData.adsWatchedToday || 0;
-            const lastBatchTime = userData.lastAdBatchTime ? userData.lastAdBatchTime.toDate() : null;
-            const now = new Date();
-
-            if (adsWatched >= 15) {
-                if (lastBatchTime) {
-                    const diffMs = now - lastBatchTime;
-                    if ((diffMs / (1000 * 60 * 60)) < 3) {
-                        return alert("Ad limit reached. Wait 3 hours.");
-                    } else { adsWatched = 0; }
-                }
-            }
-
-            window.location.href = 'https://otieu.com/4/10335575';
-            const newCount = adsWatched + 1;
-            const updateData = { balance: firebase.firestore.FieldValue.increment(0.10), adsWatchedToday: newCount };
-            if (newCount >= 15) updateData.lastAdBatchTime = firebase.firestore.FieldValue.serverTimestamp();
-            await db.collection('users').doc(user.uid).update(updateData);
-        }
-
-        // 5. Withdrawal Logic
+        // 5. Withdraw Request
         document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const method = document.getElementById('method').value;
@@ -222,66 +193,56 @@
             const phone = document.getElementById('accountNumber').value;
             const user = auth.currentUser;
             const userDoc = await db.collection('users').doc(user.uid).get();
-            const currentBalance = userDoc.data().balance;
+            const balance = userDoc.data().balance;
 
-            if (amount > currentBalance) return alert("Insufficient Balance");
-            if (method === "Recharge" && amount < 20) return alert("Min 20 BDT");
-            if (method === "Bkash" && amount < 50) return alert("Min 50 BDT");
+            if (amount > balance) return alert("Insufficient Balance");
+            if (amount < (method === 'Recharge' ? 20 : 50)) return alert("Minimum withdrawal limit not reached.");
 
             await db.collection('withdrawals').add({
-                uid: user.uid, email: user.email, method, amount, phone, status: 'Pending', date: new Date()
+                uid: user.uid, method, amount, phone, status: 'Pending', date: new Date()
             });
             await db.collection('users').doc(user.uid).update({ balance: firebase.firestore.FieldValue.increment(-amount) });
-            alert("Request sent successfully!");
+            alert("Withdrawal request submitted!");
             showScreen('dashboardScreen');
         });
 
-        // 6. Referral Link (Set to your Telegram Bot)
-        function copyReferralLink() {
-            const code = document.getElementById('dashReferCode').textContent;
-            //        
-            const botUsername = "Earning00100_bot"; 
-            const link = `https://t.me/${botUsername}?start=${code}`;
-            
-            navigator.clipboard.writeText(link).then(() => {
-                alert("Telegram Refer Link Copied!");
-            }).catch(() => {
-                // Fallback for older browsers
-                const el = document.createElement('textarea');
-                el.value = link;
-                document.body.appendChild(el);
-                el.select();
-                document.execCommand('copy');
-                document.body.removeChild(el);
-                alert("Telegram Refer Link Copied!");
-            });
+        function showScreen(id) {
+            document.querySelectorAll('.app-screen').forEach(s => s.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
         }
 
-        // 7. Auth State Monitoring
+        function copyReferralLink() {
+            const code = document.getElementById('dashReferCode').textContent;
+            const link = `https://t.me/Earning00100_bot?start=${code}`;
+            navigator.clipboard.writeText(link).then(() => alert("Refer Link Copied!"));
+        }
+
         auth.onAuthStateChanged(user => {
             if(user) {
                 db.collection('users').doc(user.uid).onSnapshot(doc => {
                     if(doc.exists) {
                         const data = doc.data();
                         document.getElementById('dashName').textContent = data.name;
-                        document.getElementById('dashBalance').textContent = (data.balance || 0).toFixed(2) + " BDT";
+                        document.getElementById('dashBalance').textContent = data.balance.toFixed(2) + " BDT";
                         document.getElementById('dashReferCode').textContent = data.referCode;
-                        document.getElementById('adsCount').textContent = (data.adsWatchedToday || 0) + "/15";
+                        document.getElementById('adsCount').textContent = (data.adsWatchedToday || 0) + "/100";
                         document.getElementById('refCount').textContent = data.referCount || 0;
-                        document.getElementById('withdrawBalance').textContent = (data.balance || 0).toFixed(2) + " BDT";
-
+                        
                         const btn = document.getElementById('watchAdBtn');
-                        const cooldown = document.getElementById('cooldownMsg');
-                        if (data.adsWatchedToday >= 15 && data.lastAdBatchTime) {
+                        if (data.adsWatchedToday >= 100 && data.lastAdBatchTime) {
                             const diff = (new Date() - data.lastAdBatchTime.toDate()) / (1000 * 60 * 60);
-                            if (diff < 3) {
-                                btn.disabled = true; cooldown.style.display = 'block';
-                                cooldown.textContent = "Wait for 3 hours to watch more.";
-                            } else { btn.disabled = false; cooldown.style.display = 'none'; }
-                        } else { btn.disabled = false; cooldown.style.display = 'none'; }
-                        showScreen('dashboardScreen');
+                            if (diff < 3) { 
+                                btn.disabled = true; 
+                                document.getElementById('cooldownMsg').style.display = 'block'; 
+                            } else { 
+                                btn.disabled = false; 
+                                document.getElementById('cooldownMsg').style.display = 'none'; 
+                            }
+                        }
                     }
                 });
+                loadWithdrawHistory(user.uid);
+                showScreen('dashboardScreen');
             } else { showScreen('loginScreen'); }
         });
 
