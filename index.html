@@ -40,7 +40,7 @@
 
         <div id="registerScreen" class="app-screen" style="display:none;">
             <h2>Registration</h2>
-            <div class="notice">🎁 Join now and start earning!</div>
+            <div class="notice">ЁЯОБ Join now and start earning!</div>
             <form id="registerForm">
                 <input type="text" id="regName" placeholder="Full Name" required>
                 <input type="email" id="regEmail" placeholder="Email Address" required>
@@ -59,7 +59,7 @@
             </div>
 
             <div class="data-card" style="display: flex; justify-content: space-between;">
-                <div><p>Ads Today</p><strong id="adsCount">0/100</strong></div>
+                <div><p>Ads Today</p><strong id="adsCount">0/20</strong></div>
                 <div><p>Total Refers</p><strong id="refCount">0</strong></div>
             </div>
 
@@ -67,7 +67,7 @@
             <p id="cooldownMsg" style="color:red; text-align:center; display:none; font-weight: bold;">Wait for 3 hours.</p>
             
             <div class="data-card" style="margin-top:15px; text-align: center;">
-                <span class="refer-text">💰 Earn 5 BDT per Refer!</span>
+                <span class="refer-text">🎁 Earn 5 BDT per Refer!</span>
                 <p>Refer Code: <strong id="dashReferCode" style="color:#0a84ff; font-size: 20px;">...</strong></p>
                 <button style="background:#34c759;" onclick="copyReferralLink()">Copy Refer Link</button>
             </div>
@@ -119,7 +119,7 @@
             const doc = await db.collection('users').doc(user.uid).get();
             const data = doc.data();
             
-            if (data.adsWatchedToday >= 100 && data.lastAdBatchTime) {
+            if (data.adsWatchedToday >= 20 && data.lastAdBatchTime) {
                 const diff = (new Date() - data.lastAdBatchTime.toDate()) / (1000 * 60 * 60);
                 if (diff < 3) return alert("Please wait 3 hours!");
             }
@@ -131,14 +131,14 @@
                 balance: firebase.firestore.FieldValue.increment(0.10),
                 adsWatchedToday: newCount
             };
-            if (newCount >= 100) updateData.lastAdBatchTime = firebase.firestore.FieldValue.serverTimestamp();
+            if (newCount >= 20) updateData.lastAdBatchTime = firebase.firestore.FieldValue.serverTimestamp();
 
             await db.collection('users').doc(user.uid).update(updateData);
         }
 
         // 3. Withdraw History (Error Fix: Snapshot Listener)
         function loadWithdrawHistory(uid) {
-            // orderBy সরিয়ে দেওয়া হয়েছে যাতে ইন্ডেক্স এরর না আসে
+            // orderBy рж╕рж░рж┐рзЯрзЗ ржжрзЗржУрзЯрж╛ рж╣рзЯрзЗржЫрзЗ ржпрж╛рждрзЗ ржЗржирзНржбрзЗржХрзНрж╕ ржПрж░рж░ ржирж╛ ржЖрж╕рзЗ
             db.collection('withdrawals').where('uid', '==', uid).onSnapshot(snap => {
                 const list = document.getElementById('historyList');
                 if (snap.empty) { list.innerHTML = "No history found."; return; }
@@ -148,7 +148,7 @@
                     const data = doc.data();
                     const statusClass = data.status === 'Pending' ? 'status-pending' : 'status-success';
                     html += `<div class="history-item">
-                                <span>${data.method} - ${data.amount}৳</span>
+                                <span>${data.method} - ${data.amount}рз│</span>
                                 <span class="${statusClass}">${data.status}</span>
                              </div>`;
                 });
@@ -225,11 +225,11 @@
                         document.getElementById('dashName').textContent = data.name;
                         document.getElementById('dashBalance').textContent = data.balance.toFixed(2) + " BDT";
                         document.getElementById('dashReferCode').textContent = data.referCode;
-                        document.getElementById('adsCount').textContent = (data.adsWatchedToday || 0) + "/100";
+                        document.getElementById('adsCount').textContent = (data.adsWatchedToday || 0) + "/20";
                         document.getElementById('refCount').textContent = data.referCount || 0;
                         
                         const btn = document.getElementById('watchAdBtn');
-                        if (data.adsWatchedToday >= 100 && data.lastAdBatchTime) {
+                        if (data.adsWatchedToday >= 20 && data.lastAdBatchTime) {
                             const diff = (new Date() - data.lastAdBatchTime.toDate()) / (1000 * 60 * 60);
                             if (diff < 3) { 
                                 btn.disabled = true; 
