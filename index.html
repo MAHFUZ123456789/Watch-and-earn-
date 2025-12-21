@@ -9,39 +9,36 @@
     <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-firestore.js"></script>
     
-    <script src="https://quge5.com/88/tag.min.js" data-zone="195034" async data-cfasync="false"></script>
-    
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: #ffffff; margin: 0; padding: 0; display: flex; justify-content: center; }
         .app-container { width: 100%; max-width: 480px; background: #1e1e1e; min-height: 100vh; padding: 20px; box-sizing: border-box; }
-        h2, h3 { color: #007aff; text-align: center; }
+        h2, h3, h4 { color: #007aff; text-align: center; margin-top: 10px; }
         input, select { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #333; background: #2c2c2c; color: white; box-sizing: border-box; }
         button { width: 100%; padding: 14px; background-color: #007aff; color: white; border: none; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 5px; transition: 0.3s; }
-        button:active { transform: scale(0.98); }
         button:disabled { background-color: #444; color: #888; cursor: not-allowed; }
         .data-card { background: #2c2c2c; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #3d3d3d; }
         .balance-text { color: #32d74b; font-size: 26px; font-weight: bold; }
-        .history-item { background: #3a3a3c; padding: 10px; border-radius: 8px; margin-top: 5px; font-size: 14px; display: flex; justify-content: space-between; border-left: 4px solid #007aff; }
+        .refer-text { color: #ffd60a; font-size: 16px; font-weight: bold; margin-bottom: 10px; display: block; text-align: center; }
+        .history-item { background: #3a3a3c; padding: 10px; border-radius: 8px; margin-top: 8px; font-size: 14px; display: flex; justify-content: space-between; border-left: 4px solid #007aff; }
         .status-pending { color: #ff9500; font-weight: bold; }
         .status-success { color: #32d74b; font-weight: bold; }
+        #timerDisplay { font-size: 18px; color: #ff3b30; font-weight: bold; text-align: center; display: none; margin: 15px 0; padding: 12px; background: rgba(255, 59, 48, 0.1); border-radius: 10px; border: 1px dashed #ff3b30; }
         .notice { background: #3a3a3c; padding: 10px; border-radius: 10px; font-size: 13px; color: #ffd60a; margin-bottom: 15px; text-align: center; font-weight: bold; }
-        .refer-text { color: #ffd60a; font-size: 16px; font-weight: bold; margin-bottom: 10px; display: block; text-align: center; }
-        
-        /* কাউন্টডাউন টাইমার স্টাইল */
-        #timerDisplay { font-size: 18px; color: #ff3b30; font-weight: bold; text-align: center; display: none; margin-top: 10px; padding: 10px; background: rgba(255, 59, 48, 0.1); border-radius: 8px; }
     </style>
 </head>
 <body>
     <div class="app-container">
         
-        <div id="loginScreen" class="app-screen">
-            <h2>Login</h2>
-            <form id="loginForm">
-                <input type="email" id="logEmail" placeholder="Email" required>
-                <input type="password" id="logPassword" placeholder="Password" required>
-                <button type="submit">Log In</button>
+        <div id="authScreen" class="app-screen">
+            <h2 id="authTitle">Login</h2>
+            <form id="authForm">
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit" id="authBtn">Log In</button>
             </form>
-            <p style="text-align: center;">New here? <span style="color:#0a84ff; cursor:pointer;" onclick="showScreen('registerScreen')">Register Now</span></p>
+            <p style="text-align: center; margin-top: 15px;">
+                <span id="toggleText" style="color:#0a84ff; cursor:pointer;" onclick="toggleAuth()">New here? Register Now</span>
+            </p>
         </div>
 
         <div id="dashboardScreen" class="app-screen" style="display:none;">
@@ -53,12 +50,13 @@
 
             <div class="data-card" style="display: flex; justify-content: space-between;">
                 <div><p>Ads Today</p><strong id="adsCount">0/20</strong></div>
-                <div><p>Total Refers</p><strong id="refCount">0</strong></div>
+                <div><p>Refers</p><strong id="refCount">0</strong></div>
             </div>
 
-            <button id="watchAdBtn" onclick="watchAd()">🎥 Watch Ad & Earn</button>
-            
-            <div id="timerDisplay">Please wait: <span id="countdown">03:00:00</span></div>
+            <button id="watchAdBtn" onclick="handleAdClick()">🎥 Watch Ad & Earn</button>
+            <div id="timerDisplay">Wait: <span id="countdown">03:00:00</span></div>
+
+            <button style="background:#ff9500; margin-top:10px;" onclick="showScreen('withdrawScreen')">💰 Withdraw Money</button>
             
             <div class="data-card" style="margin-top:15px; text-align: center;">
                 <span class="refer-text">🤝 Earn 5 BDT per Refer!</span>
@@ -66,11 +64,9 @@
                 <button style="background:#34c759;" onclick="copyReferralLink()">Copy Refer Link</button>
             </div>
 
-            <button style="background:#ff9500;" onclick="showScreen('withdrawScreen')">Withdraw Money</button>
-
-            <div class="data-card" style="margin-top:20px;">
-                <h4 style="margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px;">Withdraw History</h4>
-                <div id="historyList">Loading...</div>
+            <div class="data-card">
+                <h4>Withdraw History</h4>
+                <div id="historyList">Loading history...</div>
             </div>
 
             <button style="background:#ff3b30; margin-top:20px;" onclick="auth.signOut()">Logout</button>
@@ -78,23 +74,23 @@
 
         <div id="withdrawScreen" class="app-screen" style="display:none;">
             <h3>Withdraw Funds</h3>
-            <div class="notice">Recharge: 20 BDT | Bkash: 50 BDT</div>
+            <div class="notice">Minimum: Recharge 20 BDT | Bkash 50 BDT</div>
             <form id="withdrawForm">
                 <select id="method" required>
                     <option value="Recharge">Mobile Recharge</option>
                     <option value="Bkash">Bkash</option>
                 </select>
                 <input type="number" id="amount" placeholder="Amount" required>
-                <input type="text" id="accountNumber" placeholder="Account Number" required>
-                <button type="submit" style="background:#32d74b;">Request Withdraw</button>
+                <input type="text" id="accountNumber" placeholder="Phone Number" required>
+                <button type="submit" style="background:#32d74b;">Submit Request</button>
             </form>
-            <button style="background:#3a3a3c;" onclick="showScreen('dashboardScreen')">Back</button>
+            <button style="background:#3a3a3c;" onclick="showScreen('dashboardScreen')">Back to Dashboard</button>
         </div>
 
     </div>
 
     <script>
-        // 1. Firebase Config
+        // 1. Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAnNUHLN9R-HlSkbv6c0zw7PxrUZIqqCEA",
             authDomain: "refer-and-earn-f924e.firebaseapp.com",
@@ -107,24 +103,20 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        let isLogin = true;
         let timerInterval;
 
-        // 2. Watch Ad Function
-        async function watchAd() {
-            const user = auth.currentUser;
-            if(!user) return;
-
-            const doc = await db.collection('users').doc(user.uid).get();
-            const data = doc.data();
-            
-            // চেক করুন ৩ ঘণ্টা হয়েছে কি না
-            if (data.adsWatchedToday >= 20 && data.lastAdBatchTime) {
-                const diff = (new Date() - data.lastAdBatchTime.toDate()) / (1000 * 60 * 60);
-                if (diff < 3) return; 
-            }
-
-            // অ্যাড ওপেন করা (Multitag)
+        // 2. Ad Handling (Safe Way)
+        function handleAdClick() {
             window.open('https://quge5.com/88/tag.min.js?zone=195034', '_blank');
+            processReward();
+        }
+
+        async function processReward() {
+            const user = auth.currentUser;
+            const userRef = db.collection('users').doc(user.uid);
+            const doc = await userRef.get();
+            const data = doc.data();
 
             let newCount = (data.adsWatchedToday || 0) + 1;
             let updateData = {
@@ -135,12 +127,11 @@
             if (newCount >= 20) {
                 updateData.lastAdBatchTime = firebase.firestore.FieldValue.serverTimestamp();
             }
-
-            await db.collection('users').doc(user.uid).update(updateData);
+            await userRef.update(updateData);
         }
 
-        // 3. টাইমার ফাংশন (Live Countdown)
-        function startTimer(targetDate) {
+        // 3. Countdown Timer
+        function startCountdown(startTime) {
             clearInterval(timerInterval);
             const display = document.getElementById('timerDisplay');
             const countdownEl = document.getElementById('countdown');
@@ -148,57 +139,117 @@
 
             timerInterval = setInterval(() => {
                 const now = new Date().getTime();
-                const distance = (targetDate.getTime() + (3 * 60 * 60 * 1000)) - now;
+                const end = startTime.getTime() + (3 * 60 * 60 * 1000);
+                const distance = end - now;
 
-                if (distance < 0) {
+                if (distance <= 0) {
                     clearInterval(timerInterval);
                     display.style.display = 'none';
                     btn.disabled = false;
-                    // রিসেট অ্যাড কাউন্ট
                     db.collection('users').doc(auth.currentUser.uid).update({ adsWatchedToday: 0 });
                     return;
                 }
 
-                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                const h = Math.floor(distance / (3600000));
+                const m = Math.floor((distance % 3600000) / 60000);
+                const s = Math.floor((distance % 60000) / 1000);
 
-                countdownEl.textContent = 
-                    (hours < 10 ? "0" + hours : hours) + ":" + 
-                    (minutes < 10 ? "0" + minutes : minutes) + ":" + 
-                    (seconds < 10 ? "0" + seconds : seconds);
-                
+                countdownEl.textContent = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
                 display.style.display = 'block';
                 btn.disabled = true;
             }, 1000);
         }
 
-        // 4. Auth State & Realtime Updates
-        auth.onAuthStateChanged(user => {
-            if(user) {
-                db.collection('users').doc(user.uid).onSnapshot(doc => {
-                    if(doc.exists) {
-                        const data = doc.data();
-                        document.getElementById('dashName').textContent = data.name;
-                        document.getElementById('dashBalance').textContent = data.balance.toFixed(2) + " BDT";
-                        document.getElementById('dashReferCode').textContent = data.referCode;
-                        document.getElementById('adsCount').textContent = (data.adsWatchedToday || 0) + "/20";
-                        document.getElementById('refCount').textContent = data.referCount || 0;
-                        
-                        // টাইমার লজিক চেক
-                        if (data.adsWatchedToday >= 20 && data.lastAdBatchTime) {
-                            startTimer(data.lastAdBatchTime.toDate());
-                        } else {
-                            document.getElementById('timerDisplay').style.display = 'none';
-                            document.getElementById('watchAdBtn').disabled = false;
-                        }
-                    }
-                });
-                showScreen('dashboardScreen');
-            } else { showScreen('loginScreen'); }
+        // 4. Withdraw Logic
+        document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const method = document.getElementById('method').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const phone = document.getElementById('accountNumber').value;
+            const user = auth.currentUser;
+
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            const balance = userDoc.data().balance;
+
+            const min = method === 'Recharge' ? 20 : 50;
+            if (amount < min) return alert(`Minimum withdraw for ${method} is ${min} BDT`);
+            if (amount > balance) return alert("Insufficient Balance!");
+
+            await db.collection('withdrawals').add({
+                uid: user.uid, method, amount, phone, status: 'Pending', timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            await db.collection('users').doc(user.uid).update({ balance: firebase.firestore.FieldValue.increment(-amount) });
+            
+            alert("Withdraw request sent!");
+            showScreen('dashboardScreen');
         });
 
-        // 5. Utility Functions (Show Screen, Copy Link etc.)
+        // 5. Load History
+        function loadHistory(uid) {
+            db.collection('withdrawals').where('uid', '==', uid).orderBy('timestamp', 'desc').onSnapshot(snap => {
+                let html = '';
+                if(snap.empty) html = '<p style="text-align:center">No history yet.</p>';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const statusClass = d.status === 'Pending' ? 'status-pending' : 'status-success';
+                    html += `<div class="history-item">
+                        <span>${d.method} - ${d.amount}৳</span>
+                        <span class="${statusClass}">${d.status}</span>
+                    </div>`;
+                });
+                document.getElementById('historyList').innerHTML = html;
+            });
+        }
+
+        // 6. Auth State
+        auth.onAuthStateChanged(user => {
+            if(user) {
+                showScreen('dashboardScreen');
+                loadHistory(user.uid);
+                db.collection('users').doc(user.uid).onSnapshot(doc => {
+                    const data = doc.data();
+                    if(!data) return;
+                    document.getElementById('dashName').textContent = data.name;
+                    document.getElementById('dashBalance').textContent = data.balance.toFixed(2) + " BDT";
+                    document.getElementById('dashReferCode').textContent = data.referCode;
+                    document.getElementById('adsCount').textContent = `${data.adsWatchedToday || 0}/20`;
+                    document.getElementById('refCount').textContent = data.referCount || 0;
+
+                    if (data.adsWatchedToday >= 20 && data.lastAdBatchTime) {
+                        startCountdown(data.lastAdBatchTime.toDate());
+                    }
+                });
+            } else {
+                showScreen('authScreen');
+            }
+        });
+
+        // Toggle & Helper Functions
+        function toggleAuth() {
+            isLogin = !isLogin;
+            document.getElementById('authTitle').textContent = isLogin ? "Login" : "Register";
+            document.getElementById('authBtn').textContent = isLogin ? "Log In" : "Create Account";
+            document.getElementById('toggleText').textContent = isLogin ? "New here? Register Now" : "Have an account? Login";
+        }
+
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            try {
+                if (isLogin) { await auth.signInWithEmailAndPassword(email, pass); } 
+                else {
+                    const name = prompt("Enter Full Name:");
+                    if(!name) return;
+                    const res = await auth.createUserWithEmailAndPassword(email, pass);
+                    const myRef = Math.random().toString(36).substring(2, 8).toUpperCase();
+                    await db.collection('users').doc(res.user.uid).set({
+                        uid: res.user.uid, name, email, referCode: myRef, balance: 0, adsWatchedToday: 0, referCount: 0
+                    });
+                }
+            } catch (err) { alert(err.message); }
+        });
+
         function showScreen(id) {
             document.querySelectorAll('.app-screen').forEach(s => s.style.display = 'none');
             document.getElementById(id).style.display = 'block';
@@ -207,20 +258,11 @@
         function copyReferralLink() {
             const code = document.getElementById('dashReferCode').textContent;
             const link = `https://t.me/Earning00100_bot?start=${code}`;
-            const el = document.createElement('textarea');
-            el.value = link;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
+            const t = document.createElement("textarea");
+            t.value = link; document.body.appendChild(t); t.select();
+            document.execCommand("copy"); document.body.removeChild(t);
             alert("Refer Link Copied!");
         }
-
-        // Login Logic
-        document.getElementById('loginForm').addEventListener('submit', e => {
-            e.preventDefault();
-            auth.signInWithEmailAndPassword(document.getElementById('logEmail').value, document.getElementById('logPassword').value).catch(err => alert(err.message));
-        });
     </script>
 </body>
-                                   </html>
+    </html>
