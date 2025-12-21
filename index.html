@@ -15,15 +15,15 @@
         h2, h3, h4 { color: #007aff; text-align: center; margin-top: 10px; }
         input, select { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #333; background: #2c2c2c; color: white; box-sizing: border-box; }
         button { width: 100%; padding: 14px; background-color: #007aff; color: white; border: none; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 5px; transition: 0.3s; }
-        button:disabled { background-color: #444; color: #888; cursor: not-allowed; }
+        button:disabled { background-color: #444; color: #888; cursor: not-allowed; opacity: 0.6; }
         .data-card { background: #2c2c2c; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #3d3d3d; }
         .balance-text { color: #32d74b; font-size: 26px; font-weight: bold; }
-        .refer-text { color: #ffd60a; font-size: 16px; font-weight: bold; margin-bottom: 10px; display: block; text-align: center; }
-        .history-item { background: #3a3a3c; padding: 10px; border-radius: 8px; margin-top: 8px; font-size: 14px; display: flex; justify-content: space-between; border-left: 4px solid #007aff; }
+        .history-item { background: #3a3a3c; padding: 12px; border-radius: 8px; margin-top: 8px; font-size: 14px; display: flex; justify-content: space-between; border-left: 4px solid #007aff; }
         .status-pending { color: #ff9500; font-weight: bold; }
         .status-success { color: #32d74b; font-weight: bold; }
         #timerDisplay { font-size: 18px; color: #ff3b30; font-weight: bold; text-align: center; display: none; margin: 15px 0; padding: 12px; background: rgba(255, 59, 48, 0.1); border-radius: 10px; border: 1px dashed #ff3b30; }
         .notice { background: #3a3a3c; padding: 10px; border-radius: 10px; font-size: 13px; color: #ffd60a; margin-bottom: 15px; text-align: center; font-weight: bold; }
+        .refer-text { color: #ffd60a; font-size: 16px; font-weight: bold; margin-bottom: 10px; display: block; text-align: center; }
     </style>
 </head>
 <body>
@@ -84,13 +84,13 @@
                 <input type="text" id="accountNumber" placeholder="Phone Number" required>
                 <button type="submit" style="background:#32d74b;">Submit Request</button>
             </form>
-            <button style="background:#3a3a3c;" onclick="showScreen('dashboardScreen')">Back to Dashboard</button>
+            <button style="background:#3a3a3c;" onclick="showScreen('dashboardScreen')">Back</button>
         </div>
 
     </div>
 
     <script>
-        // 1. Firebase Configuration
+        // 1. Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyAnNUHLN9R-HlSkbv6c0zw7PxrUZIqqCEA",
             authDomain: "refer-and-earn-f924e.firebaseapp.com",
@@ -106,7 +106,7 @@
         let isLogin = true;
         let timerInterval;
 
-        // 2. Ad Handling (Safe Way)
+        // 2. Ad Click Function (Safe Implementation)
         function handleAdClick() {
             window.open('https://quge5.com/88/tag.min.js?zone=195034', '_blank');
             processReward();
@@ -130,7 +130,7 @@
             await userRef.update(updateData);
         }
 
-        // 3. Countdown Timer
+        // 3. Countdown Timer Logic
         function startCountdown(startTime) {
             clearInterval(timerInterval);
             const display = document.getElementById('timerDisplay');
@@ -139,7 +139,7 @@
 
             timerInterval = setInterval(() => {
                 const now = new Date().getTime();
-                const end = startTime.getTime() + (3 * 60 * 60 * 1000);
+                const end = startTime.getTime() + (3 * 60 * 60 * 1000); // 3 Hours
                 const distance = end - now;
 
                 if (distance <= 0) {
@@ -150,7 +150,7 @@
                     return;
                 }
 
-                const h = Math.floor(distance / (3600000));
+                const h = Math.floor(distance / 3600000);
                 const m = Math.floor((distance % 3600000) / 60000);
                 const s = Math.floor((distance % 60000) / 1000);
 
@@ -160,7 +160,87 @@
             }, 1000);
         }
 
-        // 4. Withdraw Logic
+        // 4. Load Withdraw History (Fixed Function)
+        function loadHistory(uid) {
+            const historyList = document.getElementById('historyList');
+            db.collection('withdrawals')
+              .where('uid', '==', uid)
+              .onSnapshot(snap => {
+                let html = '';
+                if(snap.empty) {
+                    html = '<p style="text-align:center; color:#888;">No history yet.</p>';
+                } else {
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        const statusClass = d.status === 'Pending' ? 'status-pending' : 'status-success';
+                        html += `<div class="history-item">
+                            <span>${d.method} - ${d.amount}৳</span>
+                            <span class="${statusClass}">${d.status}</span>
+                        </div>`;
+                    });
+                }
+                historyList.innerHTML = html;
+            }, err => {
+                console.error("History Error: ", err);
+                historyList.innerHTML = '<p style="text-align:center; color:red;">Error loading history.</p>';
+            });
+        }
+
+        // 5. Auth State Observer
+        auth.onAuthStateChanged(user => {
+            if(user) {
+                showScreen('dashboardScreen');
+                loadHistory(user.uid);
+                db.collection('users').doc(user.uid).onSnapshot(doc => {
+                    const data = doc.data();
+                    if(!data) return;
+                    document.getElementById('dashName').textContent = data.name;
+                    document.getElementById('dashBalance').textContent = data.balance.toFixed(2) + " BDT";
+                    document.getElementById('dashReferCode').textContent = data.referCode;
+                    document.getElementById('adsCount').textContent = `${data.adsWatchedToday || 0}/20`;
+                    document.getElementById('refCount').textContent = data.referCount || 0;
+
+                    if (data.adsWatchedToday >= 20 && data.lastAdBatchTime) {
+                        startCountdown(data.lastAdBatchTime.toDate());
+                    } else {
+                        document.getElementById('timerDisplay').style.display = 'none';
+                        document.getElementById('watchAdBtn').disabled = false;
+                    }
+                });
+            } else {
+                showScreen('authScreen');
+            }
+        });
+
+        // Toggle Auth (Login/Register)
+        function toggleAuth() {
+            isLogin = !isLogin;
+            document.getElementById('authTitle').textContent = isLogin ? "Login" : "Register";
+            document.getElementById('authBtn').textContent = isLogin ? "Log In" : "Create Account";
+            document.getElementById('toggleText').textContent = isLogin ? "New here? Register Now" : "Have an account? Login";
+        }
+
+        // Login & Registration Submit
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            try {
+                if (isLogin) {
+                    await auth.signInWithEmailAndPassword(email, pass);
+                } else {
+                    const name = prompt("Enter your Full Name:");
+                    if(!name) return;
+                    const res = await auth.createUserWithEmailAndPassword(email, pass);
+                    const myRef = Math.random().toString(36).substring(2, 8).toUpperCase();
+                    await db.collection('users').doc(res.user.uid).set({
+                        uid: res.user.uid, name, email, referCode: myRef, balance: 0, adsWatchedToday: 0, referCount: 0
+                    });
+                }
+            } catch (err) { alert(err.message); }
+        });
+
+        // Withdraw Request Submit
         document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const method = document.getElementById('method').value;
@@ -180,74 +260,8 @@
             });
             await db.collection('users').doc(user.uid).update({ balance: firebase.firestore.FieldValue.increment(-amount) });
             
-            alert("Withdraw request sent!");
+            alert("Withdraw request submitted successfully!");
             showScreen('dashboardScreen');
-        });
-
-        // 5. Load History
-        function loadHistory(uid) {
-            db.collection('withdrawals').where('uid', '==', uid).orderBy('timestamp', 'desc').onSnapshot(snap => {
-                let html = '';
-                if(snap.empty) html = '<p style="text-align:center">No history yet.</p>';
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    const statusClass = d.status === 'Pending' ? 'status-pending' : 'status-success';
-                    html += `<div class="history-item">
-                        <span>${d.method} - ${d.amount}৳</span>
-                        <span class="${statusClass}">${d.status}</span>
-                    </div>`;
-                });
-                document.getElementById('historyList').innerHTML = html;
-            });
-        }
-
-        // 6. Auth State
-        auth.onAuthStateChanged(user => {
-            if(user) {
-                showScreen('dashboardScreen');
-                loadHistory(user.uid);
-                db.collection('users').doc(user.uid).onSnapshot(doc => {
-                    const data = doc.data();
-                    if(!data) return;
-                    document.getElementById('dashName').textContent = data.name;
-                    document.getElementById('dashBalance').textContent = data.balance.toFixed(2) + " BDT";
-                    document.getElementById('dashReferCode').textContent = data.referCode;
-                    document.getElementById('adsCount').textContent = `${data.adsWatchedToday || 0}/20`;
-                    document.getElementById('refCount').textContent = data.referCount || 0;
-
-                    if (data.adsWatchedToday >= 20 && data.lastAdBatchTime) {
-                        startCountdown(data.lastAdBatchTime.toDate());
-                    }
-                });
-            } else {
-                showScreen('authScreen');
-            }
-        });
-
-        // Toggle & Helper Functions
-        function toggleAuth() {
-            isLogin = !isLogin;
-            document.getElementById('authTitle').textContent = isLogin ? "Login" : "Register";
-            document.getElementById('authBtn').textContent = isLogin ? "Log In" : "Create Account";
-            document.getElementById('toggleText').textContent = isLogin ? "New here? Register Now" : "Have an account? Login";
-        }
-
-        document.getElementById('authForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
-            try {
-                if (isLogin) { await auth.signInWithEmailAndPassword(email, pass); } 
-                else {
-                    const name = prompt("Enter Full Name:");
-                    if(!name) return;
-                    const res = await auth.createUserWithEmailAndPassword(email, pass);
-                    const myRef = Math.random().toString(36).substring(2, 8).toUpperCase();
-                    await db.collection('users').doc(res.user.uid).set({
-                        uid: res.user.uid, name, email, referCode: myRef, balance: 0, adsWatchedToday: 0, referCount: 0
-                    });
-                }
-            } catch (err) { alert(err.message); }
         });
 
         function showScreen(id) {
