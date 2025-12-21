@@ -9,13 +9,16 @@
     <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-firestore.js"></script>
     
+    <script src='//libtl.com/sdk.js' data-zone='10357842' data-sdk='show_10357842'></script>
+    
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: #ffffff; margin: 0; padding: 0; display: flex; justify-content: center; }
         .app-container { width: 100%; max-width: 480px; background: #1e1e1e; min-height: 100vh; padding: 20px; box-sizing: border-box; }
         h2, h3 { color: #007aff; text-align: center; }
         input, select { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #333; background: #2c2c2c; color: white; box-sizing: border-box; }
-        button { width: 100%; padding: 14px; background-color: #007aff; color: white; border: none; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 5px; }
-        button:disabled { background-color: #444; color: #888; }
+        button { width: 100%; padding: 14px; background-color: #007aff; color: white; border: none; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 5px; transition: 0.3s; }
+        button:active { transform: scale(0.98); }
+        button:disabled { background-color: #444; color: #888; cursor: not-allowed; }
         .data-card { background: #2c2c2c; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #3d3d3d; }
         .balance-text { color: #32d74b; font-size: 26px; font-weight: bold; }
         .history-item { background: #3a3a3c; padding: 10px; border-radius: 8px; margin-top: 5px; font-size: 14px; display: flex; justify-content: space-between; border-left: 4px solid #007aff; }
@@ -40,7 +43,7 @@
 
         <div id="registerScreen" class="app-screen" style="display:none;">
             <h2>Registration</h2>
-            <div class="notice">ЁЯОБ Join now and start earning!</div>
+            <div class="notice">🎁 Join now and start earning!</div>
             <form id="registerForm">
                 <input type="text" id="regName" placeholder="Full Name" required>
                 <input type="email" id="regEmail" placeholder="Email Address" required>
@@ -63,11 +66,11 @@
                 <div><p>Total Refers</p><strong id="refCount">0</strong></div>
             </div>
 
-            <button id="watchAdBtn" onclick="watchAd()">Watch Ad & Earn</button>
-            <p id="cooldownMsg" style="color:red; text-align:center; display:none; font-weight: bold;">Wait for 3 hours.</p>
+            <button id="watchAdBtn" onclick="watchAd()">🎥 Watch Ad & Earn</button>
+            <p id="cooldownMsg" style="color:#ff3b30; text-align:center; display:none; font-weight: bold; margin-top:10px;">Daily Limit Reached! Wait for 3 hours.</p>
             
             <div class="data-card" style="margin-top:15px; text-align: center;">
-                <span class="refer-text">🎁 Earn 5 BDT per Refer!</span>
+                <span class="refer-text">🤝 Earn 5 BDT per Refer!</span>
                 <p>Refer Code: <strong id="dashReferCode" style="color:#0a84ff; font-size: 20px;">...</strong></p>
                 <button style="background:#34c759;" onclick="copyReferralLink()">Copy Refer Link</button>
             </div>
@@ -100,7 +103,7 @@
     </div>
 
     <script>
-        // 1. Firebase Config
+        // 1. Firebase Initialize
         const firebaseConfig = {
             apiKey: "AIzaSyAnNUHLN9R-HlSkbv6c0zw7PxrUZIqqCEA",
             authDomain: "refer-and-earn-f924e.firebaseapp.com",
@@ -113,32 +116,47 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // 2. Watch Ad
+        // 2. Updated Watch Ad Function with SDK
         async function watchAd() {
             const user = auth.currentUser;
+            if(!user) return;
+
             const doc = await db.collection('users').doc(user.uid).get();
             const data = doc.data();
             
+            // Check Daily Limit
             if (data.adsWatchedToday >= 20 && data.lastAdBatchTime) {
                 const diff = (new Date() - data.lastAdBatchTime.toDate()) / (1000 * 60 * 60);
-                if (diff < 3) return alert("Please wait 3 hours!");
+                if (diff < 3) return alert("Please wait 3 hours before next session!");
             }
 
-            window.open('https://www.effectivegatecpm.com/t4cwhusgh9?key=66a764627244f7130565dcd9e677e49c', '_blank');
+            // Trigger Monetag SDK Ad
+            if (typeof show_10357842 === 'function') {
+                show_10357842().then(async () => {
+                    // Ad Success: Update Balance
+                    let newCount = (data.adsWatchedToday || 0) + 1;
+                    let updateData = {
+                        balance: firebase.firestore.FieldValue.increment(0.10), // ০.১০ টাকা যোগ হবে
+                        adsWatchedToday: newCount
+                    };
+                    
+                    if (newCount >= 20) {
+                        updateData.lastAdBatchTime = firebase.firestore.FieldValue.serverTimestamp();
+                    }
 
-            let newCount = (data.adsWatchedToday || 0) + 1;
-            let updateData = {
-                balance: firebase.firestore.FieldValue.increment(0.10),
-                adsWatchedToday: newCount
-            };
-            if (newCount >= 20) updateData.lastAdBatchTime = firebase.firestore.FieldValue.serverTimestamp();
-
-            await db.collection('users').doc(user.uid).update(updateData);
+                    await db.collection('users').doc(user.uid).update(updateData);
+                    alert("Success! You earned 0.10 BDT.");
+                }).catch(err => {
+                    alert("Ad failed to load. Please try again later.");
+                    console.error(err);
+                });
+            } else {
+                alert("Ad SDK is loading... please wait a moment.");
+            }
         }
 
-        // 3. Withdraw History (Error Fix: Snapshot Listener)
+        // 3. Load Withdraw History
         function loadWithdrawHistory(uid) {
-            // orderBy рж╕рж░рж┐рзЯрзЗ ржжрзЗржУрзЯрж╛ рж╣рзЯрзЗржЫрзЗ ржпрж╛рждрзЗ ржЗржирзНржбрзЗржХрзНрж╕ ржПрж░рж░ ржирж╛ ржЖрж╕рзЗ
             db.collection('withdrawals').where('uid', '==', uid).onSnapshot(snap => {
                 const list = document.getElementById('historyList');
                 if (snap.empty) { list.innerHTML = "No history found."; return; }
@@ -148,18 +166,17 @@
                     const data = doc.data();
                     const statusClass = data.status === 'Pending' ? 'status-pending' : 'status-success';
                     html += `<div class="history-item">
-                                <span>${data.method} - ${data.amount}рз│</span>
+                                <span>${data.method} - ${data.amount}৳</span>
                                 <span class="${statusClass}">${data.status}</span>
                              </div>`;
                 });
                 list.innerHTML = html;
             }, err => {
-                console.error("History Error: ", err);
                 document.getElementById('historyList').innerHTML = "Error loading history.";
             });
         }
 
-        // 4. Registration
+        // 4. Registration with Refer Logic
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('regName').value;
@@ -170,6 +187,8 @@
             
             try {
                 const cred = await auth.createUserWithEmailAndPassword(email, password);
+                
+                // Reward Referrer
                 if(referBy) {
                     const refSnap = await db.collection('users').where('referCode', '==', referBy).get();
                     if(!refSnap.empty) {
@@ -179,44 +198,37 @@
                         });
                     }
                 }
+
+                // Create User Doc
                 await db.collection('users').doc(cred.user.uid).set({
                     uid: cred.user.uid, name, email, referCode: myRef, balance: 0, adsWatchedToday: 0, referCount: 0, lastAdBatchTime: null
                 });
             } catch (err) { alert(err.message); }
         });
 
-        // 5. Withdraw Request
+        // 5. Withdraw Request Logic
         document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const method = document.getElementById('method').value;
             const amount = parseFloat(document.getElementById('amount').value);
             const phone = document.getElementById('accountNumber').value;
             const user = auth.currentUser;
+            
             const userDoc = await db.collection('users').doc(user.uid).get();
             const balance = userDoc.data().balance;
 
-            if (amount > balance) return alert("Insufficient Balance");
-            if (amount < (method === 'Recharge' ? 20 : 50)) return alert("Minimum withdrawal limit not reached.");
+            if (amount > balance) return alert("Insufficient Balance!");
+            if (amount < (method === 'Recharge' ? 20 : 50)) return alert("Minimum withdrawal is " + (method === 'Recharge' ? '20' : '50') + " BDT.");
 
             await db.collection('withdrawals').add({
                 uid: user.uid, method, amount, phone, status: 'Pending', date: new Date()
             });
             await db.collection('users').doc(user.uid).update({ balance: firebase.firestore.FieldValue.increment(-amount) });
-            alert("Withdrawal request submitted!");
+            alert("Request submitted successfully!");
             showScreen('dashboardScreen');
         });
 
-        function showScreen(id) {
-            document.querySelectorAll('.app-screen').forEach(s => s.style.display = 'none');
-            document.getElementById(id).style.display = 'block';
-        }
-
-        function copyReferralLink() {
-            const code = document.getElementById('dashReferCode').textContent;
-            const link = `https://t.me/Earning00100_bot?start=${code}`;
-            navigator.clipboard.writeText(link).then(() => alert("Refer Link Copied!"));
-        }
-
+        // Auth Listener & Realtime UI
         auth.onAuthStateChanged(user => {
             if(user) {
                 db.collection('users').doc(user.uid).onSnapshot(doc => {
@@ -229,14 +241,18 @@
                         document.getElementById('refCount').textContent = data.referCount || 0;
                         
                         const btn = document.getElementById('watchAdBtn');
+                        const cooldown = document.getElementById('cooldownMsg');
+                        
                         if (data.adsWatchedToday >= 20 && data.lastAdBatchTime) {
                             const diff = (new Date() - data.lastAdBatchTime.toDate()) / (1000 * 60 * 60);
                             if (diff < 3) { 
                                 btn.disabled = true; 
-                                document.getElementById('cooldownMsg').style.display = 'block'; 
+                                cooldown.style.display = 'block'; 
                             } else { 
                                 btn.disabled = false; 
-                                document.getElementById('cooldownMsg').style.display = 'none'; 
+                                cooldown.style.display = 'none'; 
+                                // Reset count after cooldown
+                                db.collection('users').doc(user.uid).update({ adsWatchedToday: 0 });
                             }
                         }
                     }
@@ -246,6 +262,23 @@
             } else { showScreen('loginScreen'); }
         });
 
+        function showScreen(id) {
+            document.querySelectorAll('.app-screen').forEach(s => s.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
+        }
+
+        function copyReferralLink() {
+            const code = document.getElementById('dashReferCode').textContent;
+            const link = `https://t.me/Earning00100_bot?start=${code}`;
+            const tempInput = document.createElement("input");
+            tempInput.value = link;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            alert("Refer Link Copied!");
+        }
+
         document.getElementById('loginForm').addEventListener('submit', e => {
             e.preventDefault();
             auth.signInWithEmailAndPassword(document.getElementById('logEmail').value, document.getElementById('logPassword').value).catch(err => alert(err.message));
@@ -253,4 +286,3 @@
     </script>
 </body>
     </html>
-
