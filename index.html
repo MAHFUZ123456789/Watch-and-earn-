@@ -9,7 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-firestore.js"></script>
     
-    <script src='//libtl.com/sdk.js' data-zone='10357842' data-sdk='show_10357842'></script>
+    <script src="https://quge5.com/88/tag.min.js" data-zone="195034" async data-cfasync="false"></script>
     
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: #ffffff; margin: 0; padding: 0; display: flex; justify-content: center; }
@@ -26,6 +26,9 @@
         .status-success { color: #32d74b; font-weight: bold; }
         .notice { background: #3a3a3c; padding: 10px; border-radius: 10px; font-size: 13px; color: #ffd60a; margin-bottom: 15px; text-align: center; font-weight: bold; }
         .refer-text { color: #ffd60a; font-size: 16px; font-weight: bold; margin-bottom: 10px; display: block; text-align: center; }
+        
+        /* কাউন্টডাউন টাইমার স্টাইল */
+        #timerDisplay { font-size: 18px; color: #ff3b30; font-weight: bold; text-align: center; display: none; margin-top: 10px; padding: 10px; background: rgba(255, 59, 48, 0.1); border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -41,19 +44,6 @@
             <p style="text-align: center;">New here? <span style="color:#0a84ff; cursor:pointer;" onclick="showScreen('registerScreen')">Register Now</span></p>
         </div>
 
-        <div id="registerScreen" class="app-screen" style="display:none;">
-            <h2>Registration</h2>
-            <div class="notice">🎁 Join now and start earning!</div>
-            <form id="registerForm">
-                <input type="text" id="regName" placeholder="Full Name" required>
-                <input type="email" id="regEmail" placeholder="Email Address" required>
-                <input type="password" id="regPassword" placeholder="Password (Min 6 chars)" required>
-                <input type="text" id="regReferCode" placeholder="Refer Code (Optional)">
-                <button type="submit">Create Account</button>
-            </form>
-            <p style="text-align: center; cursor:pointer;" onclick="showScreen('loginScreen')">Back to Login</p>
-        </div>
-
         <div id="dashboardScreen" class="app-screen" style="display:none;">
             <h3>Dashboard</h3>
             <div class="data-card">
@@ -67,7 +57,8 @@
             </div>
 
             <button id="watchAdBtn" onclick="watchAd()">🎥 Watch Ad & Earn</button>
-            <p id="cooldownMsg" style="color:#ff3b30; text-align:center; display:none; font-weight: bold; margin-top:10px;">Daily Limit Reached! Wait for 3 hours.</p>
+            
+            <div id="timerDisplay">Please wait: <span id="countdown">03:00:00</span></div>
             
             <div class="data-card" style="margin-top:15px; text-align: center;">
                 <span class="refer-text">🤝 Earn 5 BDT per Refer!</span>
@@ -103,7 +94,7 @@
     </div>
 
     <script>
-        // 1. Firebase Initialize
+        // 1. Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyAnNUHLN9R-HlSkbv6c0zw7PxrUZIqqCEA",
             authDomain: "refer-and-earn-f924e.firebaseapp.com",
@@ -116,7 +107,9 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // 2. Updated Watch Ad Function with SDK
+        let timerInterval;
+
+        // 2. Watch Ad Function
         async function watchAd() {
             const user = auth.currentUser;
             if(!user) return;
@@ -124,111 +117,63 @@
             const doc = await db.collection('users').doc(user.uid).get();
             const data = doc.data();
             
-            // Check Daily Limit
+            // চেক করুন ৩ ঘণ্টা হয়েছে কি না
             if (data.adsWatchedToday >= 20 && data.lastAdBatchTime) {
                 const diff = (new Date() - data.lastAdBatchTime.toDate()) / (1000 * 60 * 60);
-                if (diff < 3) return alert("Please wait 3 hours before next session!");
+                if (diff < 3) return; 
             }
 
-            // Trigger Monetag SDK Ad
-            if (typeof show_10357842 === 'function') {
-                show_10357842().then(async () => {
-                    // Ad Success: Update Balance
-                    let newCount = (data.adsWatchedToday || 0) + 1;
-                    let updateData = {
-                        balance: firebase.firestore.FieldValue.increment(0.10), // ০.১০ টাকা যোগ হবে
-                        adsWatchedToday: newCount
-                    };
-                    
-                    if (newCount >= 20) {
-                        updateData.lastAdBatchTime = firebase.firestore.FieldValue.serverTimestamp();
-                    }
+            // অ্যাড ওপেন করা (Multitag)
+            window.open('https://quge5.com/88/tag.min.js?zone=195034', '_blank');
 
-                    await db.collection('users').doc(user.uid).update(updateData);
-                    alert("Success! You earned 0.10 BDT.");
-                }).catch(err => {
-                    alert("Ad failed to load. Please try again later.");
-                    console.error(err);
-                });
-            } else {
-                alert("Ad SDK is loading... please wait a moment.");
+            let newCount = (data.adsWatchedToday || 0) + 1;
+            let updateData = {
+                balance: firebase.firestore.FieldValue.increment(0.10),
+                adsWatchedToday: newCount
+            };
+
+            if (newCount >= 20) {
+                updateData.lastAdBatchTime = firebase.firestore.FieldValue.serverTimestamp();
             }
+
+            await db.collection('users').doc(user.uid).update(updateData);
         }
 
-        // 3. Load Withdraw History
-        function loadWithdrawHistory(uid) {
-            db.collection('withdrawals').where('uid', '==', uid).onSnapshot(snap => {
-                const list = document.getElementById('historyList');
-                if (snap.empty) { list.innerHTML = "No history found."; return; }
-                
-                let html = '';
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const statusClass = data.status === 'Pending' ? 'status-pending' : 'status-success';
-                    html += `<div class="history-item">
-                                <span>${data.method} - ${data.amount}৳</span>
-                                <span class="${statusClass}">${data.status}</span>
-                             </div>`;
-                });
-                list.innerHTML = html;
-            }, err => {
-                document.getElementById('historyList').innerHTML = "Error loading history.";
-            });
-        }
+        // 3. টাইমার ফাংশন (Live Countdown)
+        function startTimer(targetDate) {
+            clearInterval(timerInterval);
+            const display = document.getElementById('timerDisplay');
+            const countdownEl = document.getElementById('countdown');
+            const btn = document.getElementById('watchAdBtn');
 
-        // 4. Registration with Refer Logic
-        document.getElementById('registerForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('regName').value;
-            const email = document.getElementById('regEmail').value;
-            const password = document.getElementById('regPassword').value;
-            const referBy = document.getElementById('regReferCode').value.toUpperCase().trim();
-            const myRef = Math.random().toString(36).substring(2, 8).toUpperCase();
-            
-            try {
-                const cred = await auth.createUserWithEmailAndPassword(email, password);
-                
-                // Reward Referrer
-                if(referBy) {
-                    const refSnap = await db.collection('users').where('referCode', '==', referBy).get();
-                    if(!refSnap.empty) {
-                        await db.collection('users').doc(refSnap.docs[0].id).update({
-                            balance: firebase.firestore.FieldValue.increment(5.00),
-                            referCount: firebase.firestore.FieldValue.increment(1)
-                        });
-                    }
+            timerInterval = setInterval(() => {
+                const now = new Date().getTime();
+                const distance = (targetDate.getTime() + (3 * 60 * 60 * 1000)) - now;
+
+                if (distance < 0) {
+                    clearInterval(timerInterval);
+                    display.style.display = 'none';
+                    btn.disabled = false;
+                    // রিসেট অ্যাড কাউন্ট
+                    db.collection('users').doc(auth.currentUser.uid).update({ adsWatchedToday: 0 });
+                    return;
                 }
 
-                // Create User Doc
-                await db.collection('users').doc(cred.user.uid).set({
-                    uid: cred.user.uid, name, email, referCode: myRef, balance: 0, adsWatchedToday: 0, referCount: 0, lastAdBatchTime: null
-                });
-            } catch (err) { alert(err.message); }
-        });
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-        // 5. Withdraw Request Logic
-        document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const method = document.getElementById('method').value;
-            const amount = parseFloat(document.getElementById('amount').value);
-            const phone = document.getElementById('accountNumber').value;
-            const user = auth.currentUser;
-            
-            const userDoc = await db.collection('users').doc(user.uid).get();
-            const balance = userDoc.data().balance;
+                countdownEl.textContent = 
+                    (hours < 10 ? "0" + hours : hours) + ":" + 
+                    (minutes < 10 ? "0" + minutes : minutes) + ":" + 
+                    (seconds < 10 ? "0" + seconds : seconds);
+                
+                display.style.display = 'block';
+                btn.disabled = true;
+            }, 1000);
+        }
 
-            if (amount > balance) return alert("Insufficient Balance!");
-            if (amount < (method === 'Recharge' ? 20 : 50)) return alert("Minimum withdrawal is " + (method === 'Recharge' ? '20' : '50') + " BDT.");
-
-            await db.collection('withdrawals').add({
-                uid: user.uid, method, amount, phone, status: 'Pending', date: new Date()
-            });
-            await db.collection('users').doc(user.uid).update({ balance: firebase.firestore.FieldValue.increment(-amount) });
-            alert("Request submitted successfully!");
-            showScreen('dashboardScreen');
-        });
-
-        // Auth Listener & Realtime UI
+        // 4. Auth State & Realtime Updates
         auth.onAuthStateChanged(user => {
             if(user) {
                 db.collection('users').doc(user.uid).onSnapshot(doc => {
@@ -240,28 +185,20 @@
                         document.getElementById('adsCount').textContent = (data.adsWatchedToday || 0) + "/20";
                         document.getElementById('refCount').textContent = data.referCount || 0;
                         
-                        const btn = document.getElementById('watchAdBtn');
-                        const cooldown = document.getElementById('cooldownMsg');
-                        
+                        // টাইমার লজিক চেক
                         if (data.adsWatchedToday >= 20 && data.lastAdBatchTime) {
-                            const diff = (new Date() - data.lastAdBatchTime.toDate()) / (1000 * 60 * 60);
-                            if (diff < 3) { 
-                                btn.disabled = true; 
-                                cooldown.style.display = 'block'; 
-                            } else { 
-                                btn.disabled = false; 
-                                cooldown.style.display = 'none'; 
-                                // Reset count after cooldown
-                                db.collection('users').doc(user.uid).update({ adsWatchedToday: 0 });
-                            }
+                            startTimer(data.lastAdBatchTime.toDate());
+                        } else {
+                            document.getElementById('timerDisplay').style.display = 'none';
+                            document.getElementById('watchAdBtn').disabled = false;
                         }
                     }
                 });
-                loadWithdrawHistory(user.uid);
                 showScreen('dashboardScreen');
             } else { showScreen('loginScreen'); }
         });
 
+        // 5. Utility Functions (Show Screen, Copy Link etc.)
         function showScreen(id) {
             document.querySelectorAll('.app-screen').forEach(s => s.style.display = 'none');
             document.getElementById(id).style.display = 'block';
@@ -270,19 +207,20 @@
         function copyReferralLink() {
             const code = document.getElementById('dashReferCode').textContent;
             const link = `https://t.me/Earning00100_bot?start=${code}`;
-            const tempInput = document.createElement("input");
-            tempInput.value = link;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand("copy");
-            document.body.removeChild(tempInput);
+            const el = document.createElement('textarea');
+            el.value = link;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
             alert("Refer Link Copied!");
         }
 
+        // Login Logic
         document.getElementById('loginForm').addEventListener('submit', e => {
             e.preventDefault();
             auth.signInWithEmailAndPassword(document.getElementById('logEmail').value, document.getElementById('logPassword').value).catch(err => alert(err.message));
         });
     </script>
 </body>
-    </html>
+                                   </html>
