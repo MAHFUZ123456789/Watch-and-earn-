@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earn Cash Pro - Optimized</title>
+    <title>Earn Cash Pro - Verified Final</title>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -23,15 +23,15 @@
         
         .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 15px; transition: 0.3s; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; box-sizing: border-box; }
         .btn-primary { background-color: var(--primary); }
-        .btn-primary:disabled { background-color: #444; cursor: not-allowed; opacity: 0.7; }
         .btn-warning { background-color: var(--warning); color: #000; }
         .btn-success { background-color: var(--success); }
 
+        /* Timer Section */
         #cooldownBox { display: none; background: rgba(255, 59, 48, 0.1); border: 1px dashed #ff3b30; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; color: #ff3b30; }
-        #timerDisplay { font-size: 28px; font-weight: bold; font-family: 'Courier New', Courier, monospace; }
+        #timerDisplay { font-size: 26px; font-weight: bold; font-family: monospace; }
 
-        .refer-card { background: rgba(50, 215, 75, 0.1); padding: 20px; border-radius: 18px; border: 1px dashed var(--success); text-align: center; margin-top: 15px; }
-        .history-item { background: #2a2a2c; padding: 12px; border-radius: 10px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--primary); }
+        .refer-card { background: rgba(50, 215, 75, 0.1); padding: 20px; border-radius: 18px; border: 1px dashed var(--success); text-align: center; margin-top: 15px; margin-bottom: 15px; }
+        .history-item { background: #2a2a2c; padding: 15px; border-radius: 12px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid var(--primary); }
 
         input, select { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #444; background: #2c2c2c; color: white; box-sizing: border-box; }
         .screen { display: none; }
@@ -43,65 +43,63 @@
 
         <div id="loginScreen" class="screen active">
             <h2 style="text-align:center;">Login</h2>
-            <input type="email" id="loginEmail" placeholder="Email Address">
+            <input type="email" id="loginEmail" placeholder="Email">
             <input type="password" id="loginPass" placeholder="Password">
             <button class="btn btn-primary" onclick="loginUser()">Login</button>
-            <p style="text-align:center;">New User? <span onclick="showScreen('regScreen')" style="color:var(--primary); cursor:pointer;">Register</span></p>
+            <p style="text-align:center;">New? <span onclick="showScreen('regScreen')" style="color:var(--primary); cursor:pointer;">Register</span></p>
         </div>
 
         <div id="regScreen" class="screen">
-            <h2 style="text-align:center;">Register</h2>
-            <input type="text" id="regName" placeholder="Full Name">
-            <input type="email" id="regEmail" placeholder="Email Address">
+            <h2 style="text-align:center;">Create Account</h2>
+            <input type="text" id="regName" placeholder="Name">
+            <input type="email" id="regEmail" placeholder="Email">
             <input type="password" id="regPass" placeholder="Password">
-            <button class="btn btn-primary" onclick="registerUser()">Create Account</button>
+            <button class="btn btn-primary" onclick="registerUser()">Sign Up</button>
             <button class="btn" style="background:#444;" onclick="showScreen('loginScreen')">Back</button>
         </div>
 
         <div id="dashboardScreen" class="screen">
             <div class="balance-card">
-                <small>Current Balance</small>
+                <small>Available Balance</small>
                 <div id="userBalance" style="font-size:35px; font-weight:bold;">0.00 BDT</div>
             </div>
             
             <div class="stats-grid">
-                <div class="stat-box">Ads Completed <br><strong id="userAds" style="color:var(--primary);">0/20</strong></div>
-                <div class="stat-box">Total Refers <br><strong id="userRefers" style="color:var(--success);">0</strong></div>
+                <div class="stat-box">Ads Today <br><strong id="userAds" style="color:var(--primary);">0/20</strong></div>
+                <div class="stat-box">Refers <br><strong id="userRefers" style="color:var(--success);">0</strong></div>
             </div>
 
             <div id="cooldownBox">
-                <strong>Task Limit Reached!</strong><br>
-                <span>Available In:</span>
+                <strong>Today's Limit Over! Wait:</strong><br>
                 <div id="timerDisplay">03:00:00</div>
             </div>
 
-            <button id="adBtn" class="btn btn-primary" onclick="handleAdClick()"> Watch Ad & Earn</button>
+            <button id="adBtn" class="btn btn-primary" onclick="showAd()">Watch Ad & Earn</button>
             
             <div class="refer-card">
-                <span style="color:var(--success); font-weight:bold;"> Join Our Telegram Channel</span><br>
-                <div id="userRefCode" style="font-size:18px; margin:10px 0; color:var(--primary); font-weight: bold;">CODE: ...</div>
-                <button class="btn btn-success" style="padding:10px; font-size:14px;" onclick="copyTelegramLink()"> Copy Telegram Link</button>
+                <span style="color:var(--success); font-weight:bold;"> Earn 5 BDT per Refer!</span><br>
+                <div id="userRefCode" style="font-size:22px; font-weight:bold; margin:10px 0; color:var(--primary);">...</div>
+                <button class="btn btn-success" style="padding:10px; font-size:14px;" onclick="copyTelegramLink()"> Copy Telegram Link</button>
             </div>
 
-            <button class="btn btn-warning" onclick="showScreen('withdrawScreen')" style="margin-top:15px;"> Withdraw Money</button>
+            <button class="btn btn-warning" onclick="showScreen('withdrawScreen')">Withdraw Money</button>
             
-            <h4 style="margin-top:20px;">Withdrawal History</h4>
-            <div id="historyList">Loading...</div>
+            <h4>Withdraw History</h4>
+            <div id="historyList">Loading history...</div>
 
             <button class="btn" style="background:#ff3b30; margin-top:20px;" onclick="logout()">Logout</button>
         </div>
 
         <div id="withdrawScreen" class="screen">
-            <h3>Withdraw</h3>
-            <p style="font-size: 13px; color: #aaa;">Bkash/Nagad: 50 BDT | Recharge: 20 BDT</p>
+            <h3>Withdraw Money</h3>
             <select id="wMethod">
-                <option value="Bkash">Bkash</option>
-                <option value="Nagad">Nagad</option>
-                <option value="Recharge">Recharge</option>
+                <option value="Bkash">Bkash (Min 50tk)</option>
+                <option value="Nagad">Nagad (Min 50tk)</option>
+                <option value="Recharge">Recharge (Min 20tk)</option>
             </select>
             <input type="number" id="wAmount" placeholder="Amount">
-            <input type="text" id="wPhone" placeholder="Phone Number">
-            <button class="btn btn-success" onclick="submitWithdraw()">Submit</button>
+            <input type="text" id="wPhone" placeholder="Number">
+            <button class="btn btn-success" onclick="submitWithdraw()">Submit Request</button>
             <button class="btn" style="background:#444;" onclick="showScreen('dashboardScreen')">Back</button>
         </div>
 
@@ -120,133 +118,85 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        let timerInterval;
-
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
         }
 
-        // ---     ---
-        function runCountdown(startTimeMillis) {
+        function copyTelegramLink() {
+            const link = "https://t.me/Earning00100_bot"; 
+            const temp = document.createElement("input");
+            temp.value = link;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand("copy");
+            document.body.removeChild(temp);
+            alert("Telegram Link Copied!");
+        }
+
+        // ---      ---
+        let liveTimer;
+        function startTimer(startTimeMillis) {
             const display = document.getElementById('timerDisplay');
             const box = document.getElementById('cooldownBox');
-            const adBtn = document.getElementById('adBtn');
+            const btn = document.getElementById('adBtn');
 
-            if(timerInterval) clearInterval(timerInterval);
+            if(liveTimer) clearInterval(liveTimer);
 
-            timerInterval = setInterval(() => {
+            liveTimer = setInterval(async () => {
                 const now = new Date().getTime();
-                const endTime = startTimeMillis + (3 * 60 * 60 * 1000); 
-                const diff = endTime - now;
+                const threeHours = 3 * 60 * 60 * 1000;
+                const diff = (startTimeMillis + threeHours) - now;
 
                 if (diff <= 0) {
-                    clearInterval(timerInterval);
+                    clearInterval(liveTimer);
                     box.style.display = 'none';
-                    adBtn.disabled = false;
-                    adBtn.innerText = " Watch Ad & Earn";
-                    db.collection('users').doc(auth.currentUser.uid).update({ adsWatchedToday: 0, lastTaskTime: null });
+                    btn.disabled = false;
+                    btn.innerText = "Watch Ad & Earn";
+                    await db.collection('users').doc(auth.currentUser.uid).update({ adsWatchedToday: 0 });
                     return;
                 }
 
-                adBtn.disabled = true;
-                adBtn.innerText = "Cooldown Mode";
+                btn.disabled = true;
+                btn.innerText = "Wait for Timer";
                 box.style.display = 'block';
-
-                const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
-                const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-                const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+                const h = Math.floor(diff/3600000).toString().padStart(2,'0');
+                const m = Math.floor((diff%3600000)/60000).toString().padStart(2,'0');
+                const s = Math.floor((diff%60000)/1000).toString().padStart(2,'0');
                 display.innerText = `${h}:${m}:${s}`;
             }, 1000);
         }
 
-        // ---    ---
-        async function handleAdClick() {
+        // ---    ---
+        async function showAd() {
             const user = auth.currentUser;
-            if(!user) return;
+            const doc = await db.collection('users').doc(user.uid).get();
+            const data = doc.data();
 
-            const userDoc = await db.collection('users').doc(user.uid).get();
-            const userData = userDoc.data();
+            if (data.adsWatchedToday >= 20) return alert("Wait for timer!");
 
-            if(userData.adsWatchedToday >= 20) {
-                alert("Daily limit over! Wait for timer.");
-                return;
-            }
+            const adBtn = document.getElementById('adBtn');
+            adBtn.disabled = true;
+            adBtn.innerText = "Loading...";
 
-            const btn = document.getElementById('adBtn');
-            btn.disabled = true;
-            btn.innerText = "Loading Ad...";
-
-            // SDK Call with fallback
             if (typeof show_10357842 === 'function') {
-                show_10357842().then(() => {
-                    processReward(user.uid, userData.adsWatchedToday);
-                }).catch(err => {
-                    console.error("Ad Error:", err);
-                    window.open('https://gizokraijaw.net/vignette.min.js', '_blank');
-                    processReward(user.uid, userData.adsWatchedToday);
-                });
+                show_10357842().then(() => grantReward(user.uid, data.adsWatchedToday));
             } else {
-                // Fallback link if SDK fails
-                window.open('https://gizokraijaw.net/vignette.min.js', '_blank');
-                processReward(user.uid, userData.adsWatchedToday);
+                window.open('https://libtl.com/sdk.js?zone=10357842', '_blank');
+                grantReward(user.uid, data.adsWatchedToday);
             }
         }
 
-        async function processReward(uid, currentCount) {
-            const newCount = currentCount + 1;
-            let update = {
-                balance: firebase.firestore.FieldValue.increment(0.50),
-                adsWatchedToday: newCount
-            };
-
-            if(newCount >= 20) {
-                update.lastTaskTime = firebase.firestore.FieldValue.serverTimestamp();
-            }
-
-            await db.collection('users').doc(uid).update(update);
-            alert("Reward added!");
+        async function grantReward(uid, current) {
+            const next = current + 1;
+            let up = { balance: firebase.firestore.FieldValue.increment(0.10), adsWatchedToday: next };
+            if(next >= 20) up.lastTaskTime = firebase.firestore.FieldValue.serverTimestamp();
+            await db.collection('users').doc(uid).update(up);
             document.getElementById('adBtn').disabled = false;
-            document.getElementById('adBtn').innerText = " Watch Ad & Earn";
+            document.getElementById('adBtn').innerText = "Watch Ad & Earn";
         }
 
-        // ---     ---
-        function copyTelegramLink() {
-            const telegramLink = "https://t.me/Earning00100_bot"; //     
-            const el = document.createElement('textarea');
-            el.value = telegramLink;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            alert("Telegram Link Copied!");
-        }
-
-        // ---   ---
-        async function submitWithdraw() {
-            const method = document.getElementById('wMethod').value;
-            const amount = parseFloat(document.getElementById('wAmount').value);
-            const phone = document.getElementById('wPhone').value;
-            const u = auth.currentUser;
-
-            if(!amount || !phone) return alert("Please fill all details!");
-
-            let min = (method === "Recharge") ? 20 : 50;
-            if(amount < min) return alert(`Minimum withdraw for ${method} is ${min} BDT`);
-
-            const userDoc = await db.collection('users').doc(u.uid).get();
-            if(userDoc.data().balance < amount) return alert("Low Balance!");
-
-            await db.collection('withdrawals').add({
-                uid: u.uid, method, amount, phone, status: 'Pending', timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            await db.collection('users').doc(u.uid).update({ balance: firebase.firestore.FieldValue.increment(-amount) });
-            alert("Success! Payment in 24h.");
-            showScreen('dashboardScreen');
-        }
-
-        // --- Firebase Listener ---
+        // ---     ---
         auth.onAuthStateChanged(user => {
             if(user) {
                 showScreen('dashboardScreen');
@@ -256,31 +206,33 @@
                     document.getElementById('userBalance').innerText = d.balance.toFixed(2) + " BDT";
                     document.getElementById('userAds').innerText = d.adsWatchedToday + "/20";
                     document.getElementById('userRefers').innerText = d.referCount || 0;
-                    document.getElementById('userRefCode').innerText = "CODE: " + d.referCode;
+                    document.getElementById('userRefCode').innerText = d.referCode;
 
-                    if(d.adsWatchedToday >= 20 && d.lastTaskTime) {
-                        const start = d.lastTaskTime.toMillis ? d.lastTaskTime.toMillis() : new Date(d.lastTaskTime).getTime();
-                        runCountdown(start);
+                    if(d.adsWatchedToday >= 20) {
+                        if(d.lastTaskTime) {
+                            const startTime = d.lastTaskTime.toMillis ? d.lastTaskTime.toMillis() : new Date(d.lastTaskTime).getTime();
+                            startTimer(startTime);
+                        } else {
+                            document.getElementById('adBtn').innerText = "Updating...";
+                        }
                     } else {
-                        if(timerInterval) clearInterval(timerInterval);
+                        if(liveTimer) clearInterval(liveTimer);
                         document.getElementById('cooldownBox').style.display = 'none';
                         document.getElementById('adBtn').disabled = false;
                     }
                 });
 
-                // History Loader
                 db.collection('withdrawals').where('uid', '==', user.uid).onSnapshot(snap => {
                     let h = '';
                     snap.forEach(doc => {
-                        const data = doc.data();
+                        const x = doc.data();
                         h += `<div class="history-item">
-                            <div><strong>${data.method}</strong><br><small>${data.phone}</small></div>
-                            <div style="text-align:right"><strong>${data.amount}</strong><br><small style="color:orange">${data.status}</small></div>
+                            <div><strong>${x.method} - ${x.amount}tk</strong><br><small>${x.phone}</small></div>
+                            <span style="color:var(--warning)">${x.status}</span>
                         </div>`;
                     });
-                    document.getElementById('historyList').innerHTML = h || "No requests yet.";
+                    document.getElementById('historyList').innerHTML = h || "No requests.";
                 });
-
             } else { showScreen('loginScreen'); }
         });
 
@@ -289,19 +241,25 @@
             const p = document.getElementById('loginPass').value;
             try { await auth.signInWithEmailAndPassword(e, p); } catch(err) { alert(err.message); }
         }
-
         async function registerUser() {
-            const n = document.getElementById('regName').value;
-            const e = document.getElementById('regEmail').value;
-            const p = document.getElementById('regPass').value;
+            const n = document.getElementById('regName').value, e = document.getElementById('regEmail').value, p = document.getElementById('regPass').value;
             const c = Math.random().toString(36).substring(2, 8).toUpperCase();
             try {
                 const res = await auth.createUserWithEmailAndPassword(e, p);
-                await db.collection('users').doc(res.user.uid).set({ name:n, email:e, balance:0, adsWatchedToday:0, referCode:c, referCount:0, lastTaskTime: null });
+                await db.collection('users').doc(res.user.uid).set({ name:n, email:e, balance:0, adsWatchedToday:0, referCode:c, referCount:0 });
             } catch(e) { alert(e.message); }
         }
-
+        async function submitWithdraw() {
+            const m = document.getElementById('wMethod').value, a = parseFloat(document.getElementById('wAmount').value), p = document.getElementById('wPhone').value;
+            const u = auth.currentUser;
+            if(!a || !p) return alert("Fill all!");
+            const d = await db.collection('users').doc(u.uid).get();
+            if(d.data().balance < a) return alert("Insufficient!");
+            await db.collection('withdrawals').add({ uid: u.uid, method: m, amount: a, phone: p, status: 'Pending', timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+            await db.collection('users').doc(u.uid).update({ balance: firebase.firestore.FieldValue.increment(-a) });
+            alert("Success!"); showScreen('dashboardScreen');
+        }
         function logout() { auth.signOut().then(() => showScreen('loginScreen')); }
     </script>
 </body>
-    </html>
+</html>
