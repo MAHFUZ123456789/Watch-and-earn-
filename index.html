@@ -77,7 +77,23 @@
                 if (!doc.exists) { console.error("User document does not exist."); return; }
                 currentUserData = doc.data();
                 updateDashboardUI(currentUserData);
-                
+
+                // এই কোডটুকু setupListeners ফাংশনের ভেতরে যোগ করুন
+
+// Notification listener
+db.collection('notifications').orderBy('timestamp', 'desc').limit(1).onSnapshot(snapshot => {
+    if (!snapshot.empty) {
+        const lastNotif = snapshot.docs[0].data();
+        // আপনি চাইলে alert এর বদলে সুন্দর কোনো popup দেখাতে পারেন
+        // alert(`Admin Notice:\n\n${lastNotif.message}`);
+        // অথবা একটি নির্দিষ্ট div এ দেখাতে পারেন
+        const notifDiv = document.createElement('div');
+        notifDiv.style.cssText = 'position:fixed; top:10px; left:10px; right:10px; background-color: #007aff; color: white; padding: 15px; border-radius: 8px; z-index: 9999; text-align: center;';
+        notifDiv.innerHTML = `<strong>Notice:</strong> ${lastNotif.message}`;
+        document.body.appendChild(notifDiv);
+        setTimeout(() => document.body.removeChild(notifDiv), 5000); // 5 সেকেন্ড পর নোটিফিকেশনটি চলে যাবে
+    }
+});
                 // --- TIMER LOGIC IMPROVEMENT ---
                 // If lastTaskTime is set, it means user is in cooldown.
                 if (currentUserData.lastTaskTime) {
@@ -184,3 +200,4 @@
     </script>
 </body>
                                                                                                                                                                              </html>
+
