@@ -189,7 +189,7 @@
 
         async function grantReward(uid, current) {
             const next = current + 1;
-            let up = { balance: firebase.firestore.FieldValue.increment(0.10), adsWatchedToday: next };
+            let up = { balance: firebase.firestore.FieldValue.increment(0.05), adsWatchedToday: next };
             if(next >= 20) up.lastTaskTime = firebase.firestore.FieldValue.serverTimestamp();
             await db.collection('users').doc(uid).update(up);
             document.getElementById('adBtn').disabled = false;
@@ -263,3 +263,4 @@
     </script>
 </body>
 </html>
+
